@@ -4,7 +4,10 @@
 #
 
 FIFO=fifo-session
-./dmc-pop3 $FIFO | nc localhost 110 | ./dmc-pop3 > $FIFO
+./dmc-pop3 $FIFO | nc radare.org 110 > $FIFO
+exit 0
 
 ./dmc-pop3 | nc localhost 110 | ./dmc-pop3-post
 ./dmc-imap4 | openssl s_client -host radare.org -port 993 | ./dmc-imap4
+
+mkdir -p ~/.dmc/mail
