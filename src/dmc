@@ -3,11 +3,73 @@
 # Dynamic Mail Client
 #
 
-FIFO=fifo-session
-./dmc-pop3 $FIFO | nc radare.org 110 > $FIFO
-exit 0
-
-./dmc-pop3 | nc localhost 110 | ./dmc-pop3-post
-./dmc-imap4 | openssl s_client -host radare.org -port 993 | ./dmc-imap4
+VERSION="0.1"
+COPYRIGHT="Copyleft -- pancake@nopcode.org"
 
 mkdir -p ~/.dmc/mail
+mkdir -p ~/.dmc/tmp
+mkdir -p ~/.dmc/acc
+
+function acc_daemon {
+  FIFO=~/.dmc/tmp/${NAME}.fifo
+  INPUT=~/.dmc/tmp/${NAME}.input
+  OUTPUT=~/.dmc/tmp/${NAME}.output
+
+  if [ ${SSL} = 1 ]; then
+    NETCMD="openssl s_client -host $HOST -port $POST"
+  else
+    NETCMD="nc $HOST $PORT"
+  fi
+
+  echo "Starting $NAME account daemon..."
+
+  rm -f ${INPUT}
+  mkfifo ${INPUT}
+  (while : ; do cat ${INPUT} ; done) | \
+    ./dmc-${PROTOCOL} $FIFO 2> ${OUTPUT} | $NETCMD > $FIFO
+  rm -f ${INPUT}
+}
+
+function start_account_daemons {
+  i=0
+  for a in ~/.dmc/accounts/* ; do
+    ( source $a ; acc_daemon ) &
+    i=$(($i+1))
+  done
+  if [ "$i" = 0 ]; then
+    echo "No accounts defined in ~/.dmc/acc"
+    exit 1
+  fi
+}
+
+function start_test_daemon {
+    NAME="test"
+    SSL=0
+    PROTOCOL="pop3"
+    HOST=radare.org
+    PORT=110
+    acc_daemon
+}
+
+case "$1" in
+"--test")
+  start_test_daemon
+  ;;
+"--start")
+  start_account_daemons
+  ;;
+"--stop")
+  for a in ~/.dmc/tmp/*.pid ; do
+    echo $a
+    kill -INT `cat $a`
+  done
+  ;;
+"-v"|"--version")
+  echo "dmc v${VERSION} ${COPYRIGHT}"
+  ;;
+"--help"|"-h"|*)
+  echo "Usage: dmc [--start|--stop|--test|--version|--help]"
+  ;;
+esac
+
+exit 0
