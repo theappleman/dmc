@@ -121,16 +121,6 @@ static void cleanup(int foo) {
 	exit(0);
 }
 
-/* XXX: do not use system here */
-static int storepid(const char *fifo) {
-	int ret;
-	char *cmd = malloc(strlen(fifo)+32);
-	sprintf(cmd, "echo %d > %s.pid", getpid(), fifo);
-	ret = system(cmd);
-	free(cmd);
-	return ret;
-}
-
 int main(int argc, char **argv) {
 	if (argc>1) {
 		signal(SIGINT, cleanup);
@@ -141,7 +131,6 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Cannot open fifo file.\n");
 			return 1;
 		}
-		storepid(fifo);
 		waitreply(1);
 		while(doword(getword()));
 		cleanup(0);

@@ -6,6 +6,7 @@
 VERSION="0.1"
 COPYRIGHT="Copyleft -- pancake@nopcode.org"
 
+[ -n "${EDITOR}" ] && EDITOR=vim
 mkdir -p ~/.dmc/mail
 mkdir -p ~/.dmc/tmp
 mkdir -p ~/.dmc/acc
@@ -25,6 +26,7 @@ function acc_daemon {
 
   rm -f ${INPUT}
   mkfifo ${INPUT}
+#  echo login ${USER} ${PASS} > ${INPUT}
   (while : ; do cat ${INPUT} ; done) | \
     ./dmc-${PROTOCOL} $FIFO 2> ${OUTPUT} | $NETCMD > $FIFO
   rm -f ${INPUT}
@@ -32,7 +34,7 @@ function acc_daemon {
 
 function start_account_daemons {
   i=0
-  for a in ~/.dmc/accounts/* ; do
+  for a in ~/.dmc/acc/* ; do
     ( source $a ; acc_daemon ) &
     i=$(($i+1))
   done
@@ -42,33 +44,53 @@ function start_account_daemons {
   fi
 }
 
-function start_test_daemon {
-    NAME="test"
-    SSL=0
-    PROTOCOL="pop3"
-    HOST=radare.org
-    PORT=110
-    acc_daemon
+function print_account_template {
+    echo "NAME='test'"
+    echo "SSL=0"
+    echo "PROTOCOL='pop3,imap4'"
+    echo "HOST=serverhost.com"
+    echo "PORT=110"
+    echo "USER='username'"
+    echo "PASS='password'"
 }
 
 case "$1" in
-"--test")
-  start_test_daemon
-  ;;
-"--start")
+"-d"|"--start")
   start_account_daemons
   ;;
-"--stop")
-  for a in ~/.dmc/tmp/*.pid ; do
+"-k"|"--stop")
+  for a in ~/.dmc/tmp/*.input ; do
     echo $a
-    kill -INT `cat $a`
+    echo exit > $a
+    rm -f ~/.dmc/tmp/$a
   done
+  ;;
+"-e"|"--edit")
+  if [ -n "$2" ]; then
+    if [ -n "`cat ~/.dmc/acc/$2`" ]; then
+      print_account_template "$2" > ~/.dmc/acc/$2
+    fi
+    vim ~/.dmc/acc/$2
+    # Remove account if empty
+    if [ -z "`cat ~/.dmc/acc/$2`" ]; then
+      rm ~/.dmc/acc/$2
+    fi
+  else
+    echo "Usage: dmc -e [accountname]"
+  fi
+  ;;
+"-a"|"--addr")
+  if [ -n "$2" ]; then
+    grep -e "$2" ~/.dmc/addrbook
+  else
+    ${EDITOR} ~/.dmc/addrbook
+  fi
   ;;
 "-v"|"--version")
   echo "dmc v${VERSION} ${COPYRIGHT}"
   ;;
 "--help"|"-h"|*)
-  echo "Usage: dmc [--start|--stop|--test|--version|--help]"
+  echo "Usage: dmc [-e acc] [-a addr] [-hvdk]"
   ;;
 esac
 
