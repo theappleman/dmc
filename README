@@ -1,61 +1,48 @@
- +-----+---------------------+
- | DMC | Dynamic Mail Client |
- +-----+---------------------+
-
-Sending mails:
---------------
-  dmc-smtp ~/mail/outbox/001.eml
-  [ $? = 0 ] && mv ~/mail/outbox/001.* ~/mail/sent/
+dmc - dynamic mail client
+=========================
+dmc is a minimalist email client solution
 
 
-IMAP handling:
---------------
-  Usage: dmc-imap [options] [host] [port] < commands > output
-  dmc-imap -a plain -d ~/mail [host] [port]
+Requirements
+------------
+  netcat (nc) for plain TCP connections
+  openssl binary for SSL encrypted
+  msmtp if you want to use
 
-  options:
-    -a : auth method
-    -d : base user mail directory
 
-  commands:
-    cd [folder]
-       # SELECT "folder"
- 1003 [20:47:15] IMAP4> 51 SELECT "Sent Messages"
- 1004 [20:47:15] IMAP4< * FLAGS (\Answered \Flagged \Deleted \Seen \Draft $Forwarded)
- 1005 [20:47:15] IMAP4< * OK [PERMANENTFLAGS (\Answered \Flagged \Deleted \Seen \Draft $Forwarded \*)] Flags permitted.
- 1006 [20:47:15] IMAP4< * 340 EXISTS
- 1007 [20:47:15] IMAP4< * 2 RECENT
- 1008 [20:47:15] IMAP4< * OK [UIDVALIDITY 1230118148] UIDs valid
- 1009 [20:47:15] IMAP4< * OK [UIDNEXT 341] Predicted next UID
- 1010 [20:47:15] IMAP4< 51 OK [READ-WRITE] Select completed.
+Installation
+------------
+Few binaries will be copied into the bin directory
 
-    st : show status
- 2508 [20:48:11] IMAP4> 60 STATUS "Spam.learn-ham" (MESSAGES UIDNEXT UIDVALIDITY UNSEEN)
- 2509 [20:48:12] IMAP4< * STATUS "Spam.learn-ham" (MESSAGES 0 UIDNEXT 1 UIDVALIDITY 1211795420 UNSEEN 0)
- 2510 [20:48:12] IMAP4< 60 OK Status completed.
+    make all install PREFIX=/usr
 
-    ls [num] : list num mails (can be used to check for new mail)
-    cp = copy a mail from one folder to other
-    mv = copy+remove
-    rm = remove mail
-    lt = list folder tree
 
-LOGIN
-   Example:    C: a001 LOGIN SMITH SESAME
-               S: a001 OK LOGIN completed
-SELECT
-   Example:    C: A142 SELECT INBOX
-               S: * 172 EXISTS
-               S: * 1 RECENT
-               S: * OK [UNSEEN 12] Message 12 is first unseen
-               S: * OK [UIDVALIDITY 3857529045] UIDs valid
-               S: * OK [UIDNEXT 4392] Predicted next UID
-               S: * FLAGS (\Answered \Flagged \Deleted \Seen \Draft)
-               S: * OK [PERMANENTFLAGS (\Deleted \Seen \*)] Limited
-               S: A142 OK [READ-WRITE] SELECT completed
-CREATE
-   Example:    C: A003 CREATE owatagusiam/
-               S: A003 OK CREATE completed
-               C: A004 CREATE owatagusiam/blurdybloop
-               S: A004 OK CREATE completed
+Configuration
+-------------
+Accounting information is stored in ~/.dmc/acc and can be
+edited with
 
+    dmc -e myaccount
+
+Running
+-------
+Start it in daemon mode
+
+    dmc -d
+
+To send a mail add the contact to your addressbook
+
+   echo 'user <foo@bar.com>' > ~/.dmc/addrbook
+
+ or edit the addressbook
+
+   dmc -a
+
+Then type the mail:
+
+  XXX: This is not correct
+
+Add attachments:
+
+  $EDITOR msg 
+  dmc-mime msg attach1.zip | dmc -m `dmc -a user`

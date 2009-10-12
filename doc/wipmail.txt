@@ -1,0 +1,110 @@
+markus schnalke wrote:
+> [2009-10-06 16:26] pancake <pancake@youterm.com> 
+>     
+>> PD: Actually I have not found a more fast, usable and simplest mail client
+>> than the one shipped with iphone-os. And no, fetchmail,mutt,claws,telnet
+>> are not decent solutions. Should we open another thread to create a suckless
+>> mail client?
+>>       
+>
+> What do you mean with ``mail client''? MTA, MUA, MDA, or all of them in one?
+>     
+A solution that manages MTA, MUA, MDA and MDMA plus LSD in a simple
+way.
+
+This is:
+  - Keep a partial local cache of the mails (only last 50?)
+     - imap support server search, so why i have to mirror the folders 
+with 53200 mails?
+  - Only sync selected folders automatically or every N minutes
+  - Attachments should be only retrieved in a second stage (on slow 
+connections
+    is really useful)
+
+Client must provide a simple tree way to walk on folders (filesystem?) 
+every time a mail is fetched a file is created and it is touched with 
+the specified timestamp.
+
+I already wrote a patch for msmtp that checks for the MX entry for a 
+domain to
+automatically specify the remote SMTP server, so no need to configure 
+any smtp
+server for sending mails. I find this solution much simpler for most 
+situations (unless
+you are on a restricted network that only allows you to connect to your 
+local smtp)
+
+So, what I see here is a simple application that manages files in 
+directories and allows to create formatted files (using a template) on 
+some directories using $EDITOR,
+a command to check files in Outbox to push them to remote servers and commit
+them into the Sent directory.
+
+The basic imap operations can be easily mapped as filesystem ones:
+  - list, copy, move, remove
+
+Just having a simple application to manage pop3/smtp with those minimal 
+operations
+and writing a simple frontend to edit files on certain directories based 
+on templates.
+
+Stuff like gpg, html2text (or text2html for those who wants to raise 
+hate on mailing
+lists), filters to format a mail into a 'reply' format prefixing lines 
+with '>' ... are just
+pre and post-hooks when calling the $EDITOR or $PAGER.
+
+The only missing thing I see in this model is the part of attached 
+files. This can be
+solved by having a directory with the same filename of the mail plus 
+.files and have
+an application to serialize mail+attachments into a single text stream 
+before sending
+it to the smtp (maybe using msmtp) can be ideal.
+
+To setup accounts I can think on a single entrypoint with simple format 
+that configures
+the rest of applications to work with.
+
+Multiple accounts should be managed by this approach. Marking emails as 
+read/...
+can be just a sed script changing a header.
+
+I have never understood why there is no decent mail implementation like 
+the one
+explained above. The only problematic to implement such thing is the 
+lack of decent
+smtp/pop/imap clients. I think that ssl support can be done by local 
+openssl bouncers.
+
+Another *important* thing is that the SSL stuff must be checked, so in 
+this way you
+can setup any kind of secure connection without having to reconfigure 
+your mail
+client. This is: connecting to localhost:110 to bounce the socket to an 
+VPN or an DNSTX
+network (or TOR, etc...), the client will just know nothing about the 
+underlying network,
+and the bouncer app will be the one to ensure that the connection is not 
+broken.
+
+Network *must* be an async dependency for a mail client, so I hate when 
+the client gets
+locked because of a network cut or slowdown, it is just something that 
+cannot be understood
+nowadays.
+
+By having all this simple setup done (in a single package, please, i 
+dont want to configure
+3 or 4 programs to get my email working) i can imagine a lot of 
+automatizations in scripts
+to autoreply emails, filter spam, etc.. And the GUI is actually a 
+filesystem.
+
+Email syncing is not only a thing of pop3/imap, we can also think on 
+using ssh or fuse to
+access/sync to our remote mailboxes or maildirs.
+
+--pancake
+
+

@@ -1,0 +1,70 @@
+
+I've managed to build tinymail..but a gobject framework of 16MB size is 
+not exactly
+minimal, tiny or suckless in any way.
+
+The repository comes with no commandline or non-gtk dependent example.
+
+I still think that it is possible to implement a smtp/pop3/imap protocol 
+handler in less
+than 1000LOC, all protocols are text based and by just defining a few 
+functions for
+handling timeouts, responses and so on shouldnt be that hard.
+
+6 years ago I wrote a mail daemon (SMTP) in about 500LOC able to manage 
+mbox,
+several auth methods and mutliple connections at the same time.
+
+fetchmail has lot of unnecessary features and lacks many useful 
+functionalities.
+
+msmtp is cool, but I always find it unnecesarily complex for the things 
+it has to do. For
+example, the network layer if wrapped by a bouncer can permit to keep 
+connections
+alive, add encription, tunels and many other funny stuff.
+
+What I'm proposing is a simple setup with wrappers for 
+sendmail,msmtp,whatever that
+can be exchanged by just changing a hook script.
+
+About attaching files I have some minimal base64 algorithms, so it 
+should be that hard
+to make it work in stream like:
+
+  $ cat mail | add-attachments mail.d/* | msmtp mail@to.com
+
+And the same for extracting the attachments.
+
+I dont really think this is a loss of time (yeah, you can hate me), but 
+I hate to be forced
+to use bloatware everywhere.
+
+I also use tinymail on the n810 because is the one that comes by default 
+in the last
+firmwares because is just much better than the monolitic approach from 
+Nokia, but
+having 16MB++ of memory slurped by a mail library on an embedded device 
+is imho
+not a good thing. But I understand that having dbus to avoid doing 
+innecessary stuff
+when the device is offline and earn battery is a good thing, but at 
+least I would prefer
+to have my own minimal stack of mail management.
+
+
+--pancake
+
+Kurt H Maier wrote:
+> Check out tinymail[1].  This guy took a pretty cerebral approach to
+> developing his MUA back-end library.  I've used it in the form of
+> Modest[2] on my Nokia n810.
+>
+> Personally, I'd hate to see any more dev hours wasted on garbage like
+> imap or pop3.  ssh/rsyncing maildir to form a 'local copy,' then
+> 'commiting' changes back seems much saner to me.
+>
+> [1] - http://tinymail.org/
+> [2] - http://modest.garage.maemo.org/
+>
+>     
