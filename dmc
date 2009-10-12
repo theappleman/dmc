@@ -50,6 +50,8 @@ function print_account_template {
     echo "PROTOCOL='pop3,imap4'"
     echo "HOST=serverhost.com"
     echo "PORT=110"
+    echo "#SEND=acc-name"
+    echo "SEND=|msmtp"
     echo "USER='username'"
     echo "PASS='password'"
 }
@@ -67,17 +69,22 @@ case "$1" in
   ;;
 "-e"|"--edit")
   if [ -n "$2" ]; then
-    if [ -n "`cat ~/.dmc/acc/$2`" ]; then
+    [ -n "`cat ~/.dmc/acc/$2`" ] && \
       print_account_template "$2" > ~/.dmc/acc/$2
-    fi
     vim ~/.dmc/acc/$2
     # Remove account if empty
-    if [ -z "`cat ~/.dmc/acc/$2`" ]; then
+    [ -z "`cat ~/.dmc/acc/$2`" ] && \
       rm ~/.dmc/acc/$2
-    fi
   else
     echo "Usage: dmc -e [accountname]"
   fi
+  ;;
+"push")
+  ;;
+"pull")
+  ;;
+"-m"|"--mail")
+  TO="$2"
   ;;
 "-a"|"--addr")
   if [ -n "$2" ]; then

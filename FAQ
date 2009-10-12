@@ -1,0 +1,30 @@
+dmc - faq
+=========
+This document aims to be an entrypoint to resolve common
+questions about the usage of dmc.
+
+At the same time everybody is able to propose new problems,
+situations and be a guide for the TODO points.
+
+
+* How to define the default account?
+
+  ln -s ~/.dmc/acc.default ~/.dmc/acc/myaccount
+
+
+* How to 'unpack' the attachment files of a mail?
+
+  cd ~/.dmc/box/myaccount/inbox
+  mkdir mail-001.d
+  cd mail-001.d
+  dmc-pack -d ../mail.eml
+
+
+* How to add attachment files to a mail?
+
+  cat mail.txt | dmc-pack file1.zip file2.zip > mail.eml
+
+
+* Are mbox and Maildir supported?
+
+  No, not yet. Implementation proposals are welcome
