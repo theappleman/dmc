@@ -26,7 +26,7 @@ function acc_daemon {
 
   rm -f ${INPUT}
   mkfifo ${INPUT}
-#  echo login ${USER} ${PASS} > ${INPUT}
+  echo login ${USER} ${PASS} > ${INPUT} &
   (while : ; do cat ${INPUT} ; done) | \
     ./dmc-${PROTOCOL} $FIFO 2> ${OUTPUT} | $NETCMD > $FIFO
   rm -f ${INPUT}
@@ -45,15 +45,69 @@ function start_account_daemons {
 }
 
 function print_account_template {
-    echo "NAME='test'"
-    echo "SSL=0"
-    echo "PROTOCOL='pop3,imap4'"
-    echo "HOST=serverhost.com"
-    echo "PORT=110"
-    echo "#SEND=acc-name"
-    echo "SEND=|msmtp"
-    echo "USER='username'"
-    echo "PASS='password'"
+  echo "NAME='test'"
+  echo "SSL=0"
+  echo "PROTOCOL='pop3' # imap4"
+  echo "HOST=serverhost.com"
+  echo "PORT=110"
+  echo "#SEND=acc-name"
+  echo "SEND=|msmtp"
+  echo "MAIL=username@domain"
+  echo "USER='username'"
+  echo "PASS='password'"
+}
+
+function edit_message {
+  . ~/.dmc/acc.default
+  OUTDIR=~/.dmc/box/${NAME}/out
+  mkdir -p ${OUTDIR}
+  OUT="`mktemp ${OUTDIR}/mail.XXXXXX`"
+  echo "From: ${MAIL}" > $OUT
+  echo "To: ${TO}" > $OUT
+  echo "Subject: ${SUBJECT}" >> $OUT
+  echo "" >> $OUT
+  echo "" >> $OUT
+  if [ -e ~/.dmc/box/${NAME}/signature ]; then
+    echo "---" >> $OUT
+    cat ~/.dmc/box/${NAME}/signature >> $OUT
+  else
+    if [ -e ~/.dmc/signature ]; then
+      echo "---" >> $OUT
+      cat ~/.dmc/signature >> $OUT
+    fi
+  fi
+  ${EDITOR} ${OUT}
+  if [ -z "`cat ${OUT}`" ]; then
+    echo "Aborted mail"
+    rm -f "${OUT}"
+  else
+    ln -fs "${OUT}" ~/.dmc/mail.last
+  fi
+}
+
+function add_attachment {
+  OUT="`readlink ~/.dmc/mail.last`"
+  if [ -z "${OUT}" ]; then
+    echo "No ~/.dmc/mail.last found. 'dmc -m' or manual symlink required."
+  else
+    mkdir -p "${OUT}.d"
+    if [ -f "$1" ]; then
+      FILE="`basename \"$1\"`"
+      ln -fs "$1" "${OUT}.d/${FILE}"
+    else
+      echo "Cannot find \⅛$1\""
+    fi
+  fi
+}
+
+function send_message {
+  if [ "`echo \"$SEND\" | grep '|'`" ]; then
+    echo "=> cat $1 | ${SEND}"
+    # TODO: setup environment for $TO $SUBJECT ...
+    cat $1 | ${SEND}
+  else
+    echo "SEND method '${SEND}' not supported"
+  fi
 }
 
 case "$1" in
@@ -69,22 +123,45 @@ case "$1" in
   ;;
 "-e"|"--edit")
   if [ -n "$2" ]; then
-    [ -n "`cat ~/.dmc/acc/$2`" ] && \
-      print_account_template "$2" > ~/.dmc/acc/$2
-    vim ~/.dmc/acc/$2
-    # Remove account if empty
     [ -z "`cat ~/.dmc/acc/$2`" ] && \
+      print_account_template "$2" > ~/.dmc/acc/$2
+    ${EDITOR} ~/.dmc/acc/$2
+    # Remove account if empty
+    if [ -z "`cat ~/.dmc/acc/$2`" ]; then
       rm ~/.dmc/acc/$2
+    else
+      # by default
+      echo "The '$2' account is the default"
+      ln -fs ~/.dmc/acc/$2 ~/.dmc/acc.default
+    fi
   else
     echo "Usage: dmc -e [accountname]"
   fi
   ;;
 "push")
+  for a in ~/.dmc/box/* ; do
+    if [ -d $a/out ]; then
+      for b in $a/out/* ; do
+        if [ -f "$b" ]; then
+          send_message "$b"
+        fi
+      done
+    fi
+  done
   ;;
 "pull")
   ;;
 "-m"|"--mail")
   TO="$2"
+  SUBJECT="$3"
+  edit_message
+  ;;
+"-A"|"--add-attachment")
+  while : ; do
+    shift
+    [ -z "$1" ] && break
+    add_attachment $1
+  done
   ;;
 "-a"|"--addr")
   if [ -n "$2" ]; then
@@ -97,7 +174,7 @@ case "$1" in
   echo "dmc v${VERSION} ${COPYRIGHT}"
   ;;
 "--help"|"-h"|*)
-  echo "Usage: dmc [-e acc] [-a addr] [-hvdk]"
+  echo "Usage: dmc [-e acc] [-a addr] [-m addr subj] [-A file] [-hvdk]"
   ;;
 esac
 

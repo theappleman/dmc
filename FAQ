@@ -6,6 +6,12 @@ questions about the usage of dmc.
 At the same time everybody is able to propose new problems,
 situations and be a guide for the TODO points.
 
+     #
+     #
+  ###############
+  #  #   #   #
+  ####   #   ####
+
 
 * How to define the default account?
 
@@ -28,3 +34,29 @@ situations and be a guide for the TODO points.
 * Are mbox and Maildir supported?
 
   No, not yet. Implementation proposals are welcome
+
+
+* How can I get the headers of a mail?
+
+* And the body?
+
+  TODO: 
+
+* What about mailcap?
+
+  cat .mailcap
+  text/html; w3m -dump -I %{charset} -T text/html %s; needsterminal; copiousoutput
+  application/pdf; evince %s
+  image/jpeg; feh %s
+  image/jpg; feh %s
+  image/gif; feh %s
+
+* Is there a way to hook actions?
+
+  Actually no. But there are plans to do it in ~/.dmc/hook/
+
+* Where is the file to setup a signature?
+
+  ~/.dmc/signature
+
+  if ~/.dmc/box/$NAME}/signature exists rules before the global one

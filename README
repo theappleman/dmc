@@ -24,6 +24,8 @@ edited with
 
     dmc -e myaccount
 
+Type your signature in ~/.dmc/signature
+
 Running
 -------
 Start it in daemon mode
