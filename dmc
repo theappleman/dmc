@@ -1,15 +1,18 @@
 #!/bin/sh
 #
-# Dynamic Mail Client
+# dmc - dynamic mail client
+# Copyleft 2009 -- pancake <at> nopcode <dot> org
 #
 
 VERSION="0.1"
 COPYRIGHT="Copyleft -- pancake@nopcode.org"
+HELP="Usage: dmc [-e acc] [-a addr] [-m addr subj] [-A file] [-s msg] [-hvdk]"
 
 [ -n "${EDITOR}" ] && EDITOR=vim
 mkdir -p ~/.dmc/mail
 mkdir -p ~/.dmc/tmp
 mkdir -p ~/.dmc/acc
+[ -e ~/.dmc/acc.default ] && . ~/.dmc/acc.default
 
 function acc_daemon {
   FIFO=~/.dmc/tmp/${NAME}.fifo
@@ -51,7 +54,7 @@ function print_account_template {
   echo "HOST=serverhost.com"
   echo "PORT=110"
   echo "#SEND=acc-name"
-  echo "SEND=|msmtp"
+  echo "SEND=!msmtp"
   echo "MAIL=username@domain"
   echo "USER='username'"
   echo "PASS='password'"
@@ -101,10 +104,19 @@ function add_attachment {
 }
 
 function send_message {
-  if [ "`echo \"$SEND\" | grep '|'`" ]; then
-    echo "=> cat $1 | ${SEND}"
+  FILE=$1
+  # TODO: find a better name for the auto mode
+  if [ "${SEND}" = "!msmtp" ]; then
+    TO="`dmc -H To < $a`" # XXX
+    HOST=`dmc-smtp ${TO}` # XXX
+    msmtp --host=localhost --port=25 --read-envelope-from --auto-from=on < $a
+    if [ $? = 0 ]; then
+      echo "Mail sent! TODO: move from out/ to sent/"
+    fi
+  elif [ "`echo \"${SEND}\" | grep '|'`" ]; then
+    echo "=> cat $1 ${SEND}"
     # TODO: setup environment for $TO $SUBJECT ...
-    cat $1 | ${SEND}
+    eval cat $1 ${SEND}
   else
     echo "SEND method '${SEND}' not supported"
   fi
@@ -151,6 +163,20 @@ case "$1" in
   ;;
 "pull")
   ;;
+"-H"|"--header")
+  FILE=$1
+  [ "${FILE}" = "-" ] && FILE=""
+  while : ; do
+    shift
+    [ -z "$1" ] && break
+    grep -e : ${FILE} | grep -re ^$1 | cut -d : -f 2-
+  done
+  ;;
+"-s"|"--send")
+  for a in $* ; do
+    send_message $a
+  done
+  ;;
 "-m"|"--mail")
   TO="$2"
   SUBJECT="$3"
@@ -173,8 +199,21 @@ case "$1" in
 "-v"|"--version")
   echo "dmc v${VERSION} ${COPYRIGHT}"
   ;;
-"--help"|"-h"|*)
-  echo "Usage: dmc [-e acc] [-a addr] [-m addr subj] [-A file] [-hvdk]"
+"--help"|"-h")
+  echo ${HELP}
+  echo " -e account     edit account information"
+  echo " -a name        show addressbook email for contact"
+  echo " -m addr subj   create mail with default account"
+  echo " -H header      grep for header"
+  echo " -A file        add attachment to mail"
+  echo " -s file        send email"
+  echo " -d             start daemon"
+  echo " -h             show this help message"
+  echo " push           send mails in box/*/out"
+  echo " pull           update box/*/in folders"
+  ;;
+*)
+  echo "Usage: dmc [-e acc] [-a addr] [-m addr subj] [-A file] [-s msg] [-hvdk]"
   ;;
 esac
 

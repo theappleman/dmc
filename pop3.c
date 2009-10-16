@@ -1,4 +1,4 @@
-/* dmc :: Copyleft -- pancake (at) nopcode (dot) org */
+/* dmc :: Copyleft 2009 -- pancake (at) nopcode (dot) org */
 
 #include <stdio.h>
 #include <string.h>
@@ -108,13 +108,6 @@ static int doword(char *word) {
 	return ret;
 }
 
-static void parseoutput(void) {
-	while(!feof(stdin)) {
-		sleep(1);
-		printf("TODO\n");
-	}
-}
-
 static void cleanup(int foo) {
 	close(ff);
 	unlink(fifo);
@@ -122,18 +115,18 @@ static void cleanup(int foo) {
 }
 
 int main(int argc, char **argv) {
+	int ret = 0;
 	if (argc>1) {
 		signal(SIGINT, cleanup);
 		fifo = argv[1];
 		mkfifo(fifo, 0600);
 		ff = open(fifo, O_RDONLY);
-		if (ff == -1) {
-			fprintf(stderr, "Cannot open fifo file.\n");
-			return 1;
-		}
-		waitreply(1);
-		while(doword(getword()));
-		cleanup(0);
-	} else parseoutput();
-	return 0;
+		if (ff != -1) {
+			waitreply(1);
+			while(doword(getword()));
+			cleanup(0);
+			ret = 0;
+		} else fprintf(stderr, "Cannot open fifo file.\n");
+	} else fprintf(stderr, "Usage: dmc-pop3 fifo | nc host 110 > fifo\n");
+	return ret;
 }

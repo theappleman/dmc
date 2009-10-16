@@ -5,7 +5,7 @@ CFLAGS?=-Wall
 all: dmc-smtp dmc-pop3 dmc-imap4
 
 dmc-smtp: smtp.o
-	${CC} ${LDFLAGS} smtp.o -o dmc-smtp
+	${CC} ${LDFLAGS} smtp.o -o dmc-smtp -lresolv
 
 dmc-pop3: pop3.o
 	${CC} ${LDFLAGS} pop3.o -o dmc-pop3

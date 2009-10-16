@@ -1,4 +1,4 @@
-/* dmc :: Copyleft -- pancake (at) nopcode (dot) org */
+/* dmc :: Copyleft 2009 -- pancake (at) nopcode (dot) org */
 
 #include <stdio.h>
 #include <string.h>
