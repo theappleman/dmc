@@ -105,14 +105,15 @@ function add_attachment {
 
 function send_message {
   FILE=$1
-  # TODO: find a better name for the auto mode
+  # . ~/.dmc/acc.default
+  # TODO: find better name for the auto mode
   if [ "${SEND}" = "!msmtp" ]; then
-    TO="`dmc -H To < $a`" # XXX
-    HOST=`dmc-smtp ${TO}` # XXX
-    msmtp --host=localhost --port=25 --read-envelope-from --auto-from=on < $a
-    if [ $? = 0 ]; then
-      echo "Mail sent! TODO: move from out/ to sent/"
-    fi
+    TO="`dmc -H To < $FILE`"
+    SJ="`dmc -H Subject < $FILE`"
+    echo "Sending mail to $TO (${SJ})..."
+#    HOST=`dmc-smtp ${TO}`
+    msmtp "--user=${USER}" "--from=${MAIL}" $TO < ${FILE}
+    return $?
   elif [ "`echo \"${SEND}\" | grep '|'`" ]; then
     echo "=> cat $1 ${SEND}"
     # TODO: setup environment for $TO $SUBJECT ...
@@ -120,6 +121,12 @@ function send_message {
   else
     echo "SEND method '${SEND}' not supported"
   fi
+  return 0
+}
+
+function pull_mails {
+  echo "Pulling mails from account '${NAME}'"
+  echo "  TODO: Not implemented"
 }
 
 case "$1" in
@@ -143,34 +150,43 @@ case "$1" in
       rm ~/.dmc/acc/$2
     else
       # by default
-      echo "The '$2' account is the default"
+      echo "The '$2' account is now the default"
       ln -fs ~/.dmc/acc/$2 ~/.dmc/acc.default
     fi
   else
-    echo "Usage: dmc -e [accountname]"
+    ls ~/.dmc/acc | cat
   fi
   ;;
 "push")
-  for a in ~/.dmc/box/* ; do
-    if [ -d $a/out ]; then
-      for b in $a/out/* ; do
+  for a in ~/.dmc/acc/* ; do
+    . $a
+    if [ -d ~/.dmc/box/${NAME}/out ]; then
+      for b in ~/.dmc/box/${NAME}/out/* ; do
         if [ -f "$b" ]; then
           send_message "$b"
+          if [ $? = 0 ]; then
+            echo "Mail sent. local copy moved to ~/.dmc/box/${NAME}/sent"
+            mkdir -p ~/.dmc/box/${NAME}/sent
+            mv $b ~/.dmc/box/${NAME}/sent
+          else
+            echo "There was an error while sending the mail"
+          fi
         fi
       done
     fi
   done
   ;;
 "pull")
+  for a in ~/.dmc/acc/* ; do
+    . $a
+    mkdir -p ~/.dmc/box/${NAME}/in
+    pull_mails
+  done
   ;;
 "-H"|"--header")
-  FILE=$1
-  [ "${FILE}" = "-" ] && FILE=""
-  while : ; do
-    shift
-    [ -z "$1" ] && break
-    grep -e : ${FILE} | grep -re ^$1 | cut -d : -f 2-
-  done
+  shift
+  [ -z "$1" ] && break
+  grep -e : | grep -re ^$1: | cut -d : -f 2- | sed s,\ ,,
   ;;
 "-s"|"--send")
   for a in $* ; do
@@ -191,7 +207,11 @@ case "$1" in
   ;;
 "-a"|"--addr")
   if [ -n "$2" ]; then
-    grep -e "$2" ~/.dmc/addrbook
+    while : ; do
+      shift
+      [ -z "$1" ] && break
+      grep -e "$1" ~/.dmc/addrbook
+    done
   else
     ${EDITOR} ~/.dmc/addrbook
   fi
