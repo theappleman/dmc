@@ -41,6 +41,12 @@ situations and be a guide for the TODO points.
 
     account default : radare
 
+* How can I get a pop3/imap4 shell?
+
+  $ dmc-imap4 fifo | openssl s_client -quiet -host yourhost -port 993 > fifo
+
+  $ dmc-pop3 fifo | nc yourhost -port 110 > fifo
+
 * How to add attachment files to a mail?
 
   cat mail.txt | dmc-pack file1.zip file2.zip > mail.eml

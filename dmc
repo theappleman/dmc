@@ -20,7 +20,7 @@ function acc_daemon {
   OUTPUT=~/.dmc/tmp/${NAME}.output
 
   if [ ${SSL} = 1 ]; then
-    NETCMD="openssl s_client -host $HOST -port $POST"
+    NETCMD="openssl s_client -quiet -host $HOST -port $POST"
   else
     NETCMD="nc $HOST $PORT"
   fi

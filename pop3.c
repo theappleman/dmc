@@ -32,8 +32,9 @@ static int ready() {
         return poll((struct pollfd *)&fds, 1, 10);
 }
 
-static int waitreply(int lock) {
+static int waitreply() {
 	char *ch, *str = word;
+	int lock = 1;
 	int ret, reply = -1;
 	fflush(stdout);
 	while(lock || ready()) {
@@ -77,7 +78,7 @@ static int doword(char *word) {
 	} else
 	if (!strcmp(word, "exit")) {
 		printf("QUIT\n");
-		waitreply(1);
+		waitreply();
 		ret = 0;
 	} else
 	if (!strcmp(word, "help") || !strcmp(word, "?")) {
@@ -85,25 +86,25 @@ static int doword(char *word) {
 	} else
 	if (!strcmp(word, "ls")) {
 		printf("LIST\n");
-		waitreply(1);
+		waitreply();
 	} else
 	if (!strcmp(word, "cat")) {
 		printf("RETR %d\n", atoi(getword()));
-		waitreply(1);
+		waitreply();
 	} else
 	if (!strcmp(word, "head")) {
 		printf("TOP %d\n", atoi(getword()));
-		waitreply(1);
+		waitreply();
 	} else
 	if (!strcmp(word, "rm")) {
 		printf("DELE %d\n", atoi(getword()));
-		waitreply(1);
+		waitreply();
 	} else
 	if (!strcmp(word, "login")) {
 		printf("USER %s\n", getword());
-		waitreply(1);
+		waitreply();
 		printf("PASS %s\n", getword());
-		waitreply(1);
+		waitreply();
 	} else printf("NOOP\n");
 	return ret;
 }
@@ -122,7 +123,7 @@ int main(int argc, char **argv) {
 		mkfifo(fifo, 0600);
 		ff = open(fifo, O_RDONLY);
 		if (ff != -1) {
-			waitreply(1);
+			waitreply();
 			while(doword(getword()));
 			cleanup(0);
 			ret = 0;
