@@ -18,6 +18,8 @@ static char *fifo;
 static int ff;
 static char *dir;
 
+/* TODO: make getword() ready() and cleanup() shared between smtp,pop,imap? */
+
 /* XXX full of bugs and ugly code */
 static char *getword() {
 	char *p = NULL;
@@ -48,14 +50,21 @@ reread:
 				*p=0;
 			} else {
 				*str = ' ';
-				*str = 0;
 				str++;
+				*str = 0;
 				goto reread;
 			}
 		}
 	}
 	return word;
 }
+
+static void cleanup(int foo) {
+	close(ff);
+	unlink(fifo);
+	exit(0);
+}
+
 
 static int ready() {
         struct pollfd fds[1];
@@ -112,7 +121,6 @@ SUBSCRIBE - subcribe a folder
 CHECK - ???
 CLOSE - commit the delete stuff (maybe must be done after rm)
 EXPUNGE - permanent remove of deltec
-SEARCH - ...
 RECENT - show the number of recent messages
 #endif
 static int doword(char *word) {
@@ -128,7 +136,7 @@ static int doword(char *word) {
 		ret = 0;
 	} else
 	if (!strcmp(word, "help") || !strcmp(word, "?")) {
-		fprintf(stderr, "Use: login exit ls cat head rm rmdir mkdir mvdir\n");
+		fprintf(stderr, "Use: login exit find ls cat head rm rmdir mkdir mvdir\n");
 	} else
 	if (!strcmp(word, "pwd")) {
 		fprintf(stderr, "%s\n", dir);
@@ -141,7 +149,7 @@ static int doword(char *word) {
 		printf("%d SELECT \"%s\"\n", ctr++, dir);
 		waitreply();
 	} else
-	if (!strcmp(word, "search")) {
+	if (!strcmp(word, "find")) {
 		printf("%d SEARCH TEXT \"%s\"\n", ctr++, getword());
 		waitreply();
 	} else
@@ -168,7 +176,6 @@ static int doword(char *word) {
 			ctr++, getword());
 	} else
 	if (!strcmp(word, "rm")) {
-// TODO:
 		printf("%d DELE %d\n", ctr++, atoi(getword()));
 		waitreply();
 	} else
@@ -178,8 +185,8 @@ static int doword(char *word) {
 		waitreply();
 	} else
 	if (!strcmp(word, "login")) {
-		char * user = strdup(getword());
-		char * pass = strdup(getword());
+		char *user = strdup(getword());
+		char *pass = strdup(getword());
 		printf("%d LOGIN \"%s\" \"%s\"\n",
 			ctr++, user, pass);
 		free(user);
@@ -190,13 +197,6 @@ static int doword(char *word) {
 		waitreply();
 	}
 	return ret;
-}
-
-/* TODO: make it shared btwn pop3 + imap + smtp?  */
-static void cleanup(int foo) {
-	close(ff);
-	unlink(fifo);
-	exit(0);
 }
 
 int main(int argc, char **argv) {
