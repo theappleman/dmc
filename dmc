@@ -50,6 +50,7 @@ function start_account_daemons {
 function print_account_template {
   echo "NAME='test'"
   echo "SSL=0"
+  echo "LIMIT=50 # get only 50 mails for each folder"
   echo "PROTOCOL='pop3' # imap4"
   echo "HOST=serverhost.com"
   echo "PORT=110"
@@ -130,32 +131,15 @@ function pull_mails {
 }
 
 case "$1" in
-"-d"|"--start")
+"start")
   start_account_daemons
   ;;
-"-k"|"--stop")
+"stop")
   for a in ~/.dmc/tmp/*.input ; do
     echo $a
     echo exit > $a
     rm -f ~/.dmc/tmp/$a
   done
-  ;;
-"-e"|"--edit")
-  if [ -n "$2" ]; then
-    [ -z "`cat ~/.dmc/acc/$2`" ] && \
-      print_account_template "$2" > ~/.dmc/acc/$2
-    ${EDITOR} ~/.dmc/acc/$2
-    # Remove account if empty
-    if [ -z "`cat ~/.dmc/acc/$2`" ]; then
-      rm ~/.dmc/acc/$2
-    else
-      # by default
-      echo "The '$2' account is now the default"
-      ln -fs ~/.dmc/acc/$2 ~/.dmc/acc.default
-    fi
-  else
-    ls ~/.dmc/acc | cat
-  fi
   ;;
 "push")
   for a in ~/.dmc/acc/* ; do
@@ -183,10 +167,35 @@ case "$1" in
     pull_mails
   done
   ;;
+"-e"|"--edit")
+  if [ -n "$2" ]; then
+    [ -z "`cat ~/.dmc/acc/$2`" ] && \
+      print_account_template "$2" > ~/.dmc/acc/$2
+    ${EDITOR} ~/.dmc/acc/$2
+    # Remove account if empty
+    if [ -z "`cat ~/.dmc/acc/$2`" ]; then
+      rm ~/.dmc/acc/$2
+    else
+      # by default
+      echo "The '$2' account is now the default"
+      ln -fs ~/.dmc/acc/$2 ~/.dmc/acc.default
+    fi
+  else
+    ls ~/.dmc/acc | cat
+  fi
+  ;;
 "-H"|"--header")
-  shift
-  [ -z "$1" ] && break
-  grep -e : | grep -re ^$1: | cut -d : -f 2- | sed s,\ ,,
+  [ -z "$2" ] && break
+  grep -e : | grep -re "^$2:" | cut -d : -f 2- | sed 's, ,,'
+  ;;
+"-c"|"--cmd")
+  if [ -z "$1" ]; then
+    echo "Argument required"
+    exit 1
+  fi
+  # XXX this is going to fail and lock
+  echo "$2" > ~/.dmc/tmp/${NAME}/.input
+  tail -f ~/.dmc/tmp/${NAME}/.output
   ;;
 "-s"|"--send")
   for a in $* ; do
@@ -223,12 +232,14 @@ case "$1" in
   echo ${HELP}
   echo " -e account     edit account information"
   echo " -a name        show addressbook email for contact"
+  echo " -c cmd         run command for \$DMC_ACCOUNT or acc.default daemon"
   echo " -m addr subj   create mail with default account"
   echo " -H header      grep for header"
   echo " -A file        add attachment to mail"
   echo " -s file        send email"
-  echo " -d             start daemon"
   echo " -h             show this help message"
+  echo " start          start mail daemons"
+  echo " stop           stop them all"
   echo " push           send mails in box/*/out"
   echo " pull           update box/*/in folders"
   ;;
