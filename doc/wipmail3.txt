@@ -1,0 +1,98 @@
+The current state of my minimalist email solution is quite hacky and incomplete
+but is starting to be functional and usable. I plan to publish the hg repo where
+the source is being developed in a week or two..
+
+Actually I have a pop3 implementation in 100 LOC and imap4 in 130LOC, for
+smtp i have delegated the task to msmtp (i will write the smtp protocol later),
+and a main shellscript that manages all the rest. this will rewritten to C at
+some point. But actually i want the functionality.
+
+pop3/imap4 works on plain and ssl connections by using nc and openssl. No
+extra security checks (like IP and certificate changes), but this will be done soon too.
+
+There is no decent syncronization mechanisms, just basic folder fetching from
+pop3 and imap4. For the attachments Nibble will write a mime packer/unpacker,
+so this will be about 100LOC more.
+
+At the end I think that the first working version will be about 1000LOC, but
+the code can be easily improved and cleaned up. But ATM i'm priorizing the
+functionaility.
+
+About threads I think the best way is to grep for a subject and sort by date.
+The problem I see in threads is that you loss the timeline and for long threads
+you get just lines (no text) because of the recursively nesting nature of the
+threads. If you want to 'ban' somebody comments, its just another grep filter
+to the list, etc...
+
+I don't plan to add threading support at the moment, just plain and filtered lists.
+
+The code of 'dmc' the 'dynamic mail client' that im actually writing is going to
+work only on *nix-based systems (no plans for w32 atm)
+
+About functionalities I dont want to chop any of them, but I want to keep the
+core as simple as possible, keeping the configuration minimal, and make the
+core actions enought to be extended by user scripts.
+
+About the frontend..well i would like to write a simple gtk-based GUI, but it
+will relay on the core dmc. So it will be plain simple to write web based interfaces,
+commandline ones, or whatever.
+
+There's a long way to go, but half of it is already known :)
+
+--pancake
+
+stanio@cs.tu-berlin.de wrote:
+> * markus schnalke <meillo@marmaro.de> [2009-10-18 10:17]:
+>  
+>> [2009-10-15 21:47] stanio@cs.tu-berlin.de    
+>>> Well, I can't tell which view is more useful in mutt -- threaded or
+>>> timeline. Which is proved by the fact that I have changed couple of times
+>>> in the past the default view from one to another, and switched views at
+>>> least once a day anyway.  Which proves for me that they are equally useful
+>>> for different tasks: [...]
+>>>       
+>> IMO threads are very useful for mailing lists. (With nmh, I really miss
+>> them there.)
+>>
+>> The inbox, in contrast, is best sorted by time, I think.
+>>     
+>
+> I need both views in both cases. With threads, in general, you can't see
+> the most recent posts overall. Even if you collapse them, all threads don't
+> necessarily fit in one page.
+>
+> Date sort alone hides the structure of a conversation, as long as
+> conversations tend to fork sub-themes, which is often the case with people
+> worth communicating with :o)
+>  
+>>> In summary: I would love a less sucking alternative to existing mail
+>>> clients, in nmh style, i.e. a collection of tools to handle different
+>>> aspects of the mail processing and to delegate non-mail tasks to $EDITOR,
+>>> grep, whatever. But there are some features I consider crucial, e.g.
+>>> decent unicode support
+>>>       
+>> Would it be so much work to add it to nmh?
+>>     
+>
+> I think it is not that big deal. I did it for a Win32 application at work
+> couple of years ago. But still needs time... And I am by far not the god of
+> code anyway.
+>
+>  
+>>> IMHO it doesn't make sense to cut things which serve you good tens of times
+>>> every day.
+>>>       
+>> It's not about cutting out stuff, but switching to the Unix style. ;-)
+>>     
+>
+> Agreed.
+>
+> If it's good, (it's unix style) XOR (it's illegal, OR immoral OR it makes you
+> fat).
+> :o)
+>
+>
+> cheers
+>   
+
+
