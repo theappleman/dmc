@@ -19,17 +19,19 @@ function acc_daemon {
   INPUT=~/.dmc/tmp/${NAME}.input
   OUTPUT=~/.dmc/tmp/${NAME}.output
 
-  if [ ${SSL} = 1 ]; then
+  if [ "${SSL}" = 1 ]; then
     NETCMD="openssl s_client -quiet -host $HOST -port $POST"
+    # TODO: Add decent support for certification check and reviewing
+    # First connection must store the certificate in ~/.dmc/acc/ssl.cert
+    #  NETCMD="openssl s_client -cert '${CERT}' -verify 1 -quiet -host $HOST -port $POST"
   else
     NETCMD="nc $HOST $PORT"
   fi
 
   echo "Starting $NAME account daemon..."
 
-  rm -f ${INPUT}
-  mkfifo ${INPUT}
-  mkfifo ${FIFO}
+  rm -f "${INPUT}" "${FIFO}"
+  mkfifo "${INPUT}" "${FIFO}"
   echo login ${USER} ${PASS} > ${INPUT} &
   (while : ; do cat ${INPUT} 2> /dev/null ; done) | \
     dmc-${PROTOCOL} $FIFO 2> ${OUTPUT} | $NETCMD > $FIFO
@@ -91,8 +93,9 @@ function edit_message {
   OUTDIR=~/.dmc/box/${NAME}/out
   mkdir -p ${OUTDIR}
   OUT="`mktemp ${OUTDIR}/mail.XXXXXX`"
-  echo "From: ${MAIL}" > $OUT
-  echo "To: ${TO}" > $OUT
+  echo "X-Mailer: dmc v${VERSION}" > $OUT
+  echo "From: ${MAIL}" >> $OUT
+  echo "To: ${TO}" >> $OUT
   echo "Subject: ${SUBJECT}" >> $OUT
   echo "" >> $OUT
   echo "" >> $OUT
