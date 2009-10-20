@@ -6,7 +6,7 @@
 
 VERSION="0.1"
 COPYRIGHT="Copyleft -- pancake@nopcode.org"
-HELP="Usage: dmc [-e acc] [-a addr] [-m addr subj] [-A file] [-s msg] [-hvdk]"
+HELP="Usage: dmc [-hv] [-e acc] [-a addr] [-m addr subj] [-A file] [-s msg] [action]"
 
 [ -n "${EDITOR}" ] && EDITOR=vim
 mkdir -p ~/.dmc/mail
@@ -32,7 +32,7 @@ function acc_daemon {
   mkfifo ${FIFO}
   echo login ${USER} ${PASS} > ${INPUT} &
   (while : ; do cat ${INPUT} 2> /dev/null ; done) | \
-    ./dmc-${PROTOCOL} $FIFO 2> ${OUTPUT} | $NETCMD > $FIFO
+    dmc-${PROTOCOL} $FIFO 2> ${OUTPUT} | $NETCMD > $FIFO
   rm -f ${INPUT}
 }
 
@@ -47,7 +47,7 @@ function dmc_cmd {
   osize=0
   while : ; do
     size=`du -hs ${OUT}|awk '{print $1}'`
-    if [ "$size" = "0" ]; then
+    if [ "$size" = 0 ]; then
 	sleep 1
     else
       if [ "$size" = "$osize" ]; then
@@ -131,7 +131,10 @@ function add_attachment {
 
 function send_message {
   FILE=$1
-  # . ~/.dmc/acc.default
+  if [ ! -e "${FILE}" ]; then
+    echo "Cannot find '${FILE}'"
+    exit 1
+  fi
   # TODO: find better name for the auto mode
   if [ "${SEND}" = "!msmtp" ]; then
     TO="`dmc -H To < $FILE`"
@@ -244,6 +247,7 @@ case "$1" in
   fi
   ;;
 "-s"|"--send")
+  shift
   for a in $* ; do
     send_message $a
   done
@@ -283,6 +287,7 @@ case "$1" in
   echo " -H header      grep for header"
   echo " -A file        add attachment to mail"
   echo " -s file        send email"
+  echo " -v             show version"
   echo " -h             show this help message"
   echo " start          start mail daemons"
   echo " stop           stop them all"
@@ -290,7 +295,7 @@ case "$1" in
   echo " pull           update box/*/in folders"
   ;;
 *)
-  echo "Usage: dmc [-e acc] [-a addr] [-m addr subj] [-A file] [-s msg] [-hvdk]"
+  echo "${HELP}"
   ;;
 esac
 
