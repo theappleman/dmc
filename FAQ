@@ -51,13 +51,13 @@ situations and be a guide for the TODO points.
 
   cat mail.txt | dmc-pack file1.zip file2.zip > mail.eml
 
-
 * Are mbox and Maildir supported?
 
   No, not yet. Implementation proposals are welcome
 
-
 * How can I get the headers of a mail?
+
+  dmc -c cat 1
 
 * And the body?
 

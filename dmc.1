@@ -1,1 +1,46 @@
-TODO
+.Dd Oct 20, 2009
+.Dt DMC 1
+.Os
+.Sh NAME
+.Nm dmc
+.Nd dynamic mail client
+.Sh SYNOPSIS
+.Nm dmc
+.Op Fl h
+.Op Fl e Ar account
+.Op Fl a Ar name1 name2
+.Op Fl m Ar addr subj
+.Op Fl A Ar file
+.Op Fl s Ar msg
+.Op actionmsg
+.Sh DESCRIPTION
+dmc is a minimalistic mail client for *nix
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl e Ar account-name
+Edit or create with $EDITOR the given account. List all accounts if no argument passed.
+.It Fl a Ar name
+Grep for name in ~/.dmc/addrbook
+.It Fl A Ar file
+Append file to the last mail edited with 'dmc -m'
+.It Fl m Ar addr subj
+Create new e-mail for sending using $EDITOR from the ~/.dmc/acc.default account
+.It Fl c Ar command
+Run dmc-pop3/dmc-imap4 shell command
+.It Fl v
+Show version
+.It Fl h
+Show help message
+.It Ar start
+Start a mail daemon for each configured account
+.It Ar stop
+Stop all running dmc mail daemons
+.It Ar pull
+Retrieve ${LIMIT} mails of configured accounts
+.It Ar push
+Send all mails in outbox
+.Sh FILES
+~/.dmc/signature
+.Sh AUTHORS
+.Pp
+pancake <@nopcode.org>

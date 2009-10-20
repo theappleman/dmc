@@ -29,10 +29,36 @@ function acc_daemon {
 
   rm -f ${INPUT}
   mkfifo ${INPUT}
+  mkfifo ${FIFO}
   echo login ${USER} ${PASS} > ${INPUT} &
-  (while : ; do cat ${INPUT} ; done) | \
+  (while : ; do cat ${INPUT} 2> /dev/null ; done) | \
     ./dmc-${PROTOCOL} $FIFO 2> ${OUTPUT} | $NETCMD > $FIFO
   rm -f ${INPUT}
+}
+
+function dmc_cmd {
+# while not 0x00 is found...sleep 1
+  #:> ~/.dmc/tmp/${NAME}.output
+  # XXX this is going to fail and lock
+  OUT=~/.dmc/tmp/${NAME}.output
+  :> ${OUT}
+  echo "$@" > ~/.dmc/tmp/${NAME}.input
+  # XXX ultraugly way to check for eof
+  osize=0
+  while : ; do
+    size=`du -hs ${OUT}|awk '{print $1}'`
+    if [ "$size" = "0" ]; then
+	sleep 1
+    else
+      if [ "$size" = "$osize" ]; then
+        break
+      else
+        sleep 1
+        osize=$size
+      fi
+    fi
+  done
+  cat ${OUT}
 }
 
 function start_account_daemons {
@@ -62,7 +88,6 @@ function print_account_template {
 }
 
 function edit_message {
-  . ~/.dmc/acc.default
   OUTDIR=~/.dmc/box/${NAME}/out
   mkdir -p ${OUTDIR}
   OUT="`mktemp ${OUTDIR}/mail.XXXXXX`"
@@ -127,12 +152,26 @@ function send_message {
 
 function pull_mails {
   echo "Pulling mails from account '${NAME}'"
-  echo "  TODO: Not implemented"
+  # This is pop3-only
+  i=1
+  while : ; do
+    [ "${LIMIT}" = "$i" ] && break
+    dmc -c cat $i > ~/.dmc/box/${NAME}/in/$i.eml
+    if [ -n "`head -n 3 ~/.dmc/box/${NAME}/in/$i.eml | grep ERR`" ]; then
+      rm ~/.dmc/box/${NAME}/in/$i.eml
+      break
+    else
+      size=`du -hs ~/.dmc/box/${NAME}/in/$i.eml | awk '{print \$1}'`
+      echo "got $i $size"
+    fi
+    i=$(($i+1))
+  done
 }
 
 case "$1" in
 "start")
   start_account_daemons
+  sleep 1
   ;;
 "stop")
   for a in ~/.dmc/tmp/*.input ; do
@@ -140,6 +179,10 @@ case "$1" in
     echo exit > $a
     rm -f ~/.dmc/tmp/$a
   done
+  sleep 1
+  pkill cat
+  rm -f ~/.dmc/tmp/*
+  pkill dmc
   ;;
 "push")
   for a in ~/.dmc/acc/* ; do
@@ -189,13 +232,16 @@ case "$1" in
   grep -e : | grep -re "^$2:" | cut -d : -f 2- | sed 's, ,,'
   ;;
 "-c"|"--cmd")
-  if [ -z "$1" ]; then
-    echo "Argument required"
-    exit 1
+  if [ -z "$2" ]; then
+    while : ; do
+      printf "> "
+      read A
+      dmc_cmd "$A"
+    done
+  else
+    shift
+    dmc_cmd "$@"
   fi
-  # XXX this is going to fail and lock
-  echo "$2" > ~/.dmc/tmp/${NAME}/.input
-  tail -f ~/.dmc/tmp/${NAME}/.output
   ;;
 "-s"|"--send")
   for a in $* ; do

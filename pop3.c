@@ -64,7 +64,10 @@ static int waitreply() {
 		fprintf(stderr, "%s\n", str);
 	}
 	fflush(stderr);
-	write(2, "\x00", 1); // end of output
+	/* stderr lseek works on pipes :D */
+	lseek(2, 0, 0);
+	//if (*str)
+	//	write(2, "\x00", 1); // end of output
 	return reply;
 }
 

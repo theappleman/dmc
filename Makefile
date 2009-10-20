@@ -14,6 +14,7 @@ dmc-imap4: imap4.o
 	${CC} ${LDFLAGS} imap4.o -o dmc-imap4
 
 install:
+	cp -f dmc.1 ${PREFIX}/share/man/man1
 	cp -f dmc ${PREFIX}/bin
 	cp -f dmc-smtp ${PREFIX}/bin
 	cp -f dmc-pop3 ${PREFIX}/bin
