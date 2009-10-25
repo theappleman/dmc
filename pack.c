@@ -9,7 +9,7 @@
 static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char cd64[]="|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
 
-void b64_encode(unsigned char in[3], unsigned char out[4], int len)
+void b64_encode(char in[3], char out[4], int len)
 {
 	out[0] = cb64[ in[0] >> 2 ];
 	out[1] = cb64[ ((in[0] & 0x03) << 4) | ((in[1] & 0xf0) >> 4) ];
@@ -17,7 +17,7 @@ void b64_encode(unsigned char in[3], unsigned char out[4], int len)
 	out[3] = (len > 2 ? cb64[ in[2] & 0x3f ] : '=');
 }
 
-int b64_decode(unsigned char in[4], unsigned char out[3])
+int b64_decode(char in[4], char out[3])
 {
 	unsigned char v[4];
 	int len = 3, i;
@@ -78,7 +78,7 @@ int mime_unpack()
 				filename[strlen(filename)-2] = '\0';
 				printf("%s\n", filename);
 			} else if (b[0] == '\n') {
-				if (!dump && filename && (fd = fopen(filename, "w")))
+				if (!dump && filename[0] && (fd = fopen(filename, "w")))
 					dump = 1;
 				else dump = 0;
 			} else if (dump) {
@@ -98,8 +98,6 @@ int mime_unpack()
 
 int main(int argc, char **argv)
 {
-	int i;
-
 	if(argc < 2 || !strcmp(argv[1], "-h"))
 		printf("usage: %s [-uh | attachment1 attachment2...]\n", argv[0]);
 	else if(!strcmp(argv[1], "-u"))
