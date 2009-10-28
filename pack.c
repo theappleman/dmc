@@ -71,9 +71,9 @@ int mime_unpack()
 				} else boundary[0] = '\0';
 			}
 		} else if (entity) {
-			if ((ptr = strstr(b, "Content-Transfer-Encoding:")))
+			if ((ptr = strstr(b, "Content-Transfer-Encoding:"))) {
 				strncpy(encoding, ptr+26, 1023);
-			else if ((ptr = strstr(b, "filename="))) {
+			} else if ((ptr = strstr(b, "filename="))) {
 				strncpy(filename, ptr+10, 1023);
 				filename[strlen(filename)-2] = '\0';
 				printf("%s\n", filename);
@@ -88,8 +88,7 @@ int mime_unpack()
 						b64_decode(b+i,bd+o);
 					for(i=0;i<o;i++)
 						fputc(bd[i], fd);
-				} else
-					fputs(b, fd); 
+				} else fputs(b, fd); 
 			}
 		}
 	}
@@ -103,6 +102,5 @@ int main(int argc, char **argv)
 	else if(!strcmp(argv[1], "-u"))
 		mime_unpack();
 	else mime_pack(argv+1, argc-1);
-
 	return 0;
 }

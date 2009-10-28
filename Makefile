@@ -19,6 +19,7 @@ dmc-pack: pack.o
 install:
 	cp -f dmc.1 ${PREFIX}/share/man/man1
 	cp -f dmc ${PREFIX}/bin
+	cp -f dmc-tag ${PREFIX}/bin
 	cp -f dmc-smtp ${PREFIX}/bin
 	cp -f dmc-pop3 ${PREFIX}/bin
 	cp -f dmc-imap4 ${PREFIX}/bin

@@ -1,0 +1,44 @@
+dmc design
+==========
+
++--------+
+| source |   Maildir, mbox, pop3, imap4, mbox
++--------+   (login, ls, exit, cat, head, ...)
+    |
+ +-------+
+ | cache |   Local storage cache
+ +-------+   (pull, push)
+    |
+ +------+
+ | tags |   Tagging system pointing to cache contents
+ +------+   (set, get, list)
+    |
++----------------+
+| mail processor |  mail client, user interface
++----------------+  (process mail headers, create mails, filter tags..)
+
+For some accounts we will probably be interested in not caching anything.
+This is the case of local maildir and mbox spools.
+
+
+attachments
+===========
+
+Attachments can be extracted from any mail by using the dmc-pack utility.
+This tool parses a mail from stdin and extracts the attachments on
+separated files in the current directory.
+
+
+tags
+====
+
+local mailbox is a filesystem cache
+
+filename = unixtimestamp + 2 random letters
+
+Tags are used to mark the mails or files
+
+ $ dmc-tag -s file [tag ...]   # set tags for specific file
+ $ dmc-tag -g [tag ...]     # get/grep files matching those AND'd tags
+ $ dmc-tag -l               # list all available tags
+ $ dmc-tag - < mail         # wtf?

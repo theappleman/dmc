@@ -1,0 +1,124 @@
+#!/bin/sh
+#
+# dmc - dynamic mail client
+# Copyleft 2009 -- pancake <at> nopcode <dot> org
+# TODO: rewrite in C
+#
+
+[ -z "${DMCTAG_ROOT}" ] && \
+	DMCTAG_ROOT="${HOME}/.dmctag"
+if [ ! -d "${DMCTAG_ROOT}" ]; then
+	mkdir -p "${DMCTAG_ROOT}"
+	if [ ! $? = 0 ]; then
+		echo "Cannot create \${DMCTAG_ROOT}"
+		exit 1
+	fi
+fi
+cd ${DMCTAG_ROOT}
+
+function set_file {
+	FILE=$1
+	if [ -e "${OLDPWD}/${FILE}" ]; then
+		if [ ! "`echo $FILE|cut -c 1`" = / ]; then
+			# autocomplete relative paths
+			FILE="$OLDPWD/$FILE"
+		fi
+	else
+		echo "Cannot find $FILE"
+		exit 1
+	fi
+	export FILE
+}
+
+# untag this file . this is highly suboptimal. in C will be much faster
+function untag {
+	FILE=$1
+	for TAG in * ; do
+		grep -v ${FILE} $TAG > $TAG.tmp
+		mv $TAG.tmp $TAG
+	done
+}
+
+case "$1" in
+"-f")
+	cat * | sort | uniq
+	;;
+"-m")
+	# move cached files in from to
+	for a in * ; do
+		sed -e "s,^$1,$2," $a > $a.tmp
+		mv $a.tmp $a
+	done
+	;;
+"-c")
+	# check/cleanup for missing files
+	if [ -n "$2" ] ; then
+		set_file "$2"
+		if [ -z "`cat * | grep $FILE`" ]; then
+			rm -f "${FILE}"
+		fi
+	else
+		for a in `$0 -f` ; do
+			if [ ! -e $a ]; then
+				echo Untag missing file $a
+				untag ${FILE}
+			fi
+		done
+	fi
+	;;
+"-l")
+	# show all available tags
+	if [ -z "$2" ]; then
+		ls | cat
+	else
+		shift
+		while [ -n "$1" ] ; do
+			if [ -e "${DMCTAG_ROOT}/$1" ]; then
+				cat ${DMCTAG_ROOT}/$1
+			else
+				echo "Cannot find tag $1"
+			fi
+			shift
+		done
+	fi
+	;;
+"-u")
+	untag $2
+	;;
+"-v")
+	echo "dmc-tag-0.1 (c) 2009 pancake(at)nopcode(dot)org"
+	;;
+"")
+	echo "Usage: dmc-tag [-uhv] [-c [file ..]][-m dir dir] [[,-u] [file] [[tag ..]]]"
+	;;
+"-h")
+	$0
+	echo " dmc-tag file            # get tags of file"
+	echo " dmc-tag file tag1 tag2  # set tags of file"
+	echo " dmc-tag -u file         # untag file"
+	echo " dmc-tag -m dir1 dir2    # move files from dir1 to dir2 in tags"
+	echo " dmc-tag -f              # list all tagged files"
+	echo " dmc-tag -l              # list tags"
+	echo " dmc-tag -l tag1 tag2    # list files matching tag1+tag2"
+	echo " dmc-tag -c              # check tag consistency. untag all nonexistent files"
+	echo " dmc-tag -c file         # remove file if not tagged"
+	echo " dmc-tag -v              # show version"
+	echo " dmc-tag -h              # show this help"
+	;;
+*)
+	if [ -z "$2" ]; then
+		# get tags of given file
+		set_file "$1"
+		grep "$1" * | cut -d : -f 1
+	else
+		# set tags for a file
+		set_file "$1"
+		untag "${FILE}"
+		shift
+		while [ -n "$1" ] ; do
+			echo "${FILE}" >> ${DMCTAG_ROOT}/$1
+			shift
+		done
+	fi
+	;;
+esac
