@@ -67,17 +67,18 @@ case "$1" in
 	fi
 	;;
 "-l")
-	# show all available tags
 	if [ -z "$2" ]; then
 		ls | cat
 	else
-		while [ -n "$2" ] ; do
-			if [ -e "${DMCTAG_ROOT}/$2" ]; then
-				cat ${DMCTAG_ROOT}/$2
-			else
-				echo "Cannot find tag $2"
-			fi
-			shift
+		# XXX buggy: does not supports filenames with spaces
+		tag0=$2
+		shift ; shift
+		for a in `cat ${DMCTAG_ROOT}/${tag0}`; do
+			for b in $* ; do
+				a="`grep "$a" ${DMCTAG_ROOT}/$b`"
+				[ -z "$a" ] && break
+			done
+			[ -n "$a" ] && echo $a
 		done
 	fi
 	;;

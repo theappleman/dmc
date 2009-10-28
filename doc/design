@@ -34,6 +34,9 @@ sync
 
 The sync process is done independently from the backend.
 
+ - get list of last 50 mails
+ - TODO
+
 
 
 tags
