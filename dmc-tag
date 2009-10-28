@@ -19,33 +19,33 @@ cd ${DMCTAG_ROOT}
 function set_file {
 	FILE=$1
 	if [ -e "${OLDPWD}/${FILE}" ]; then
-		if [ ! "`echo $FILE|cut -c 1`" = / ]; then
+		if [ ! "`echo ${FILE} | cut -c 1`" = / ]; then
 			# autocomplete relative paths
-			FILE="$OLDPWD/$FILE"
+			FILE="${OLDPWD}/${FILE}"
 		fi
 	else
-		echo "Cannot find $FILE"
+		echo "Cannot find ${FILE}"
 		exit 1
 	fi
 	export FILE
 }
 
 # untag this file . this is highly suboptimal. in C will be much faster
+# XXX: Only used with $FILE.. set_file is required
 function untag {
-	FILE=$1
-	for TAG in * ; do
-		grep -v ${FILE} $TAG > $TAG.tmp
+	for TAG in `$0 -l` ; do
+		grep -v $1 $TAG > $TAG.tmp
 		mv $TAG.tmp $TAG
 	done
 }
 
 case "$1" in
 "-f")
-	cat * | sort | uniq
+	cat * 2> /dev/null | sort | uniq
 	;;
 "-m")
 	# move cached files in from to
-	for a in * ; do
+	for a in `$0 -l` ; do
 		sed -e "s,^$1,$2," $a > $a.tmp
 		mv $a.tmp $a
 	done
@@ -54,7 +54,7 @@ case "$1" in
 	# check/cleanup for missing files
 	if [ -n "$2" ] ; then
 		set_file "$2"
-		if [ -z "`cat * | grep $FILE`" ]; then
+		if [ -z "`cat * 2> /dev/null | grep $FILE`" ]; then
 			rm -f "${FILE}"
 		fi
 	else
@@ -71,25 +71,25 @@ case "$1" in
 	if [ -z "$2" ]; then
 		ls | cat
 	else
-		shift
-		while [ -n "$1" ] ; do
-			if [ -e "${DMCTAG_ROOT}/$1" ]; then
-				cat ${DMCTAG_ROOT}/$1
+		while [ -n "$2" ] ; do
+			if [ -e "${DMCTAG_ROOT}/$2" ]; then
+				cat ${DMCTAG_ROOT}/$2
 			else
-				echo "Cannot find tag $1"
+				echo "Cannot find tag $2"
 			fi
 			shift
 		done
 	fi
 	;;
 "-u")
-	untag $2
+	set_file "$2"
+	untag ${FILE}
 	;;
 "-v")
 	echo "dmc-tag-0.1 (c) 2009 pancake(at)nopcode(dot)org"
 	;;
 "")
-	echo "Usage: dmc-tag [-uhv] [-c [file ..]][-m dir dir] [[,-u] [file] [[tag ..]]]"
+	echo "Usage: dmc-tag [-uhv] [-c [file ..]] [-m dir dir] [[,-u] [file] [[tag ..]]]"
 	;;
 "-h")
 	$0
@@ -114,9 +114,8 @@ case "$1" in
 		# set tags for a file
 		set_file "$1"
 		untag "${FILE}"
-		shift
-		while [ -n "$1" ] ; do
-			echo "${FILE}" >> ${DMCTAG_ROOT}/$1
+		while [ -n "$2" ] ; do
+			echo "${FILE}" >> ${DMCTAG_ROOT}/$2
 			shift
 		done
 	fi

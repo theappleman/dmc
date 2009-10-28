@@ -29,6 +29,13 @@ This tool parses a mail from stdin and extracts the attachments on
 separated files in the current directory.
 
 
+sync
+====
+
+The sync process is done independently from the backend.
+
+
+
 tags
 ====
 

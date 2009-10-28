@@ -96,7 +96,7 @@ static int doword(char *word) {
 		waitreply();
 	} else
 	if (!strcmp(word, "head")) {
-		printf("TOP %d\n", atoi(getword()));
+		printf("TOP %d 50\n", atoi(getword()));
 		waitreply();
 	} else
 	if (!strcmp(word, "rm")) {

@@ -34,26 +34,22 @@ reread:
 			if (*word=='"') {
 				strcpy(word, word+1);
 				p = strchr(word, '"');
-				if (p) {
-					*p=0;
-				} else {
+				if (!p) {
 					str = word+strlen(word);
 					*str = ' ';
 					str++;
 					*str = 0;
 					goto reread;
-				}
+				} else *p=0;
 			}
 		} else {
 			p = strchr(str, '"');
-			if (p) {
-				*p=0;
-			} else {
+			if (!p) {
 				*str = ' ';
 				str++;
 				*str = 0;
 				goto reread;
-			}
+			} else *p = 0;
 		}
 	}
 	return word;
@@ -64,7 +60,6 @@ static void cleanup(int foo) {
 	unlink(fifo);
 	exit(0);
 }
-
 
 static int ready() {
         struct pollfd fds[1];
@@ -80,7 +75,6 @@ static int waitreply() {
 	int line = 0;
 	int ret, reply = -1;
 	fflush(stdout);
-// XXX ugly sleep hack
 	while(lock || !ready()) {
 		lock = 0;
 		ret = read(ff, str, 1024);

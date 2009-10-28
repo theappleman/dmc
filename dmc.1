@@ -7,6 +7,7 @@
 .Sh SYNOPSIS
 .Nm dmc
 .Op Fl h
+.Op Fl H Ar header
 .Op Fl e Ar account
 .Op Fl a Ar name1 name2
 .Op Fl m Ar addr subj
@@ -27,6 +28,10 @@ Append file to the last mail edited with 'dmc -m'
 Create new e-mail for sending using $EDITOR from the ~/.dmc/acc.default account
 .It Fl c Ar command
 Run dmc-pop3/dmc-imap4 shell command
+.It Fl H Ar header
+Grep for given header
+.It Fl s Ar file
+Send file as mail
 .It Fl v
 Show version
 .It Fl h

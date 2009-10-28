@@ -17,6 +17,7 @@ dmc-pack: pack.o
 	${CC} ${LDFLAGS} pack.o -o dmc-pack
 
 install:
+	chmod +x dmc dmc-tag
 	cp -f dmc.1 ${PREFIX}/share/man/man1
 	cp -f dmc ${PREFIX}/bin
 	cp -f dmc-tag ${PREFIX}/bin

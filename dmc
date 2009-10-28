@@ -110,7 +110,7 @@ function edit_message {
   fi
   ${EDITOR} ${OUT}
   if [ -z "`cat ${OUT}`" ]; then
-    echo "Aborted mail"
+    echo "Mail aborted"
     rm -f "${OUT}"
   else
     ln -fs "${OUT}" ~/.dmc/mail.last
@@ -160,8 +160,7 @@ function pull_mails {
   echo "Pulling mails from account '${NAME}'"
   # This is pop3-only
   i=1
-  while : ; do
-    [ "${LIMIT}" = "$i" ] && break
+  while [ ! "$LIMIT" = "$i" ] ; do
     dmc -c cat $i > ~/.dmc/box/${NAME}/in/$i.eml
     if [ -n "`head -n 3 ~/.dmc/box/${NAME}/in/$i.eml | grep ERR`" ]; then
       rm ~/.dmc/box/${NAME}/in/$i.eml
@@ -221,11 +220,9 @@ case "$1" in
     [ -z "`cat ~/.dmc/acc/$2`" ] && \
       print_account_template "$2" > ~/.dmc/acc/$2
     ${EDITOR} ~/.dmc/acc/$2
-    # Remove account if empty
     if [ -z "`cat ~/.dmc/acc/$2`" ]; then
-      rm ~/.dmc/acc/$2
+      rm -f ~/.dmc/acc/$2
     else
-      # by default
       echo "The '$2' account is now the default"
       ln -fs ~/.dmc/acc/$2 ~/.dmc/acc.default
     fi
@@ -234,8 +231,11 @@ case "$1" in
   fi
   ;;
 "-H"|"--header")
-  [ -z "$2" ] && break
-  grep -e : | grep -re "^$2:" | cut -d : -f 2- | sed 's, ,,'
+  if [ -z "$2" ]; then
+    echo "Usage: dmc -H [header] < mail"
+  else
+    grep -e : | grep -re "^$2:" | cut -d : -f 2- | sed 's, ,,'
+  fi
   ;;
 "-c"|"--cmd")
   if [ -z "$2" ]; then
@@ -261,18 +261,16 @@ case "$1" in
   edit_message
   ;;
 "-A"|"--add-attachment")
-  while : ; do
+  while [ -n "$2" ] ; do
+    add_attachment $2
     shift
-    [ -z "$1" ] && break
-    add_attachment $1
   done
   ;;
 "-a"|"--addr")
   if [ -n "$2" ]; then
-    while : ; do
+    while [ -n "$2" ] ; do
+      grep -e "$2" ~/.dmc/addrbook
       shift
-      [ -z "$1" ] && break
-      grep -e "$1" ~/.dmc/addrbook
     done
   else
     ${EDITOR} ~/.dmc/addrbook
@@ -285,10 +283,10 @@ case "$1" in
   echo ${HELP}
   echo " -e account     edit account information"
   echo " -a name        show addressbook email for contact"
+  echo " -A file        add attachment to mail"
   echo " -c cmd         run command for \$DMC_ACCOUNT or acc.default daemon"
   echo " -m addr subj   create mail with default account"
   echo " -H header      grep for header"
-  echo " -A file        add attachment to mail"
   echo " -s file        send email"
   echo " -v             show version"
   echo " -h             show this help message"
