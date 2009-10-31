@@ -3,13 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 
 /* XXX: here? */
 static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char cd64[]="|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
 
-void b64_encode(char in[3], char out[4], int len)
+void b64_encode(unsigned char in[3], unsigned char out[4], int len)
 {
 	out[0] = cb64[ in[0] >> 2 ];
 	out[1] = cb64[ ((in[0] & 0x03) << 4) | ((in[1] & 0xf0) >> 4) ];
@@ -17,7 +18,7 @@ void b64_encode(char in[3], char out[4], int len)
 	out[3] = (len > 2 ? cb64[ in[2] & 0x3f ] : '=');
 }
 
-int b64_decode(char in[4], char out[3])
+int b64_decode(unsigned char in[4], unsigned char out[3])
 {
 	unsigned char v[4];
 	int len = 3, i;
@@ -38,22 +39,63 @@ int b64_decode(char in[4], char out[3])
 
 int mime_pack(char **files, int nfiles)
 {
-	/*TODO*/
-	int i;
+	FILE *fd = NULL;
+	char b[1024], cmd[1024], *ptr = NULL;
+	unsigned char bd[1024];
+	int header = 1, len, in, out, i;
 
-	for(i = 0; i < nfiles; i++)
-		printf("%s\n", files[i]);
+	memset(b, '\0', 1024);
+	while(fgets(b, 1023, stdin)) {
+		if (header && b[0] == '\n') {
+			printf( "Content-Type: multipart/mixed; boundary=\"dmc-multipart\"\n\n"
+					"--dmc-multipart\n"
+					"Content-Type: text/plain\n");
+			header = 0;
+		}
+		printf("%s", b);
+	}
+	for(i = 0; i < nfiles; i++) {
+		snprintf(cmd, 1023, "file -i \"%s\"", files[i]);
+		if (!(fd=popen(cmd, "r")))
+			continue;
+		fgets(b, 1023, fd);
+		pclose(fd);
+		if (!(ptr = strchr(b, ' ')))
+			continue;
+		if (!(fd=fopen(files[i], "r")))
+			continue;
+		printf("\n--dmc-multipart\n");
+		printf("Content-Type: %s", ptr+1);
+		printf( "Content-Disposition: attachment;"
+				"filename=\"%s\"\n", files[i]);
+		if (strstr(ptr, "text")) {
+			printf("Content-Transfer-Encoding: quoted-printable\n\n");
+			while(fgets(b, 1023, fd))
+				printf("%s", b);
+		} else {
+			printf("Content-Transfer-Encoding: base64\n\n");
+			while((len=fread(b, 1, 57, fd))) {
+				memset(bd,'\0',1024);
+				for(in=out=0;in<len;in+=3,out+=4)
+					b64_encode((unsigned char*)b+in,bd+out,len-in>=3?3:len-in);
+				printf("%s\n", bd);
+			}
+		}
+		fclose(fd);
+	}
+	printf("\n--dmc-multipart--\n");
 	return 0;
 }
 
 int mime_unpack()
 {
 	FILE *fd = NULL;
-	char b[1024], bd[1024], boundary[1024], encoding[1024], filename[1024];
-	char *ptr;
-	int entity = 0, dump = 0, i, o;
+	char b[1024], boundary[1024], encoding[1024], filename[1024],*ptr = NULL;
+	unsigned char bd[1024];
+	int entity = 0, dump = 0, len, in, out, i;
 
 	boundary[0] = encoding[0] = filename[0] = '\0';
+	memset(b, '\0', 1024);
 	while(fgets(b, 1023, stdin)) {
 		if (!memcmp(b, "--", 2)) {
 			if (boundary[0] && strstr(b, boundary) &&
@@ -64,29 +106,37 @@ int mime_unpack()
 				entity = dump = 0;
 			} else {
 				strncpy(boundary, b+2, 1023);
-				boundary[strlen(boundary)-1] = '\0';
+				if ((len = strlen(boundary)) > 0)
+					boundary[len-1] = '\0';
 				if (fgets(b, 1023, stdin) && strstr(b, "Content-Type:")) {
 					dump = 0;
 					entity = 1;
-				} else boundary[0] = '\0';
+				} else boundary[0] = encoding[0] = filename[0] = '\0';
 			}
-		} else if (entity) {
+		}
+		if (entity) {
 			if ((ptr = strstr(b, "Content-Transfer-Encoding:"))) {
 				strncpy(encoding, ptr+26, 1023);
 			} else if ((ptr = strstr(b, "filename="))) {
 				strncpy(filename, ptr+10, 1023);
-				filename[strlen(filename)-2] = '\0';
-				printf("%s\n", filename);
+				if ((len=strlen(filename)) > 1)
+					filename[len-2] = '\0';
 			} else if (b[0] == '\n') {
-				if (!dump && filename[0] && (fd = fopen(filename, "w")))
+				if (!dump && filename[0] && (fd = fopen(filename, "w"))) {
+					printf("%s\n", filename);
 					dump = 1;
-				else dump = 0;
+				} else {
+					if(dump)
+						fclose(fd);
+					boundary[0] = encoding[0] = filename[0] = '\0';
+					dump = 0;
+				}
 			} else if (dump) {
 				if (strstr(encoding, "base64")) {
 					memset(bd,'\0',1024);
-					for(i=o=0;i<strlen(b)-1;i+=4,o+=3)
-						b64_decode(b+i,bd+o);
-					for(i=0;i<o;i++)
+					for(in=out=0;in<strlen(b)-1;in+=4,out+=3)
+						b64_decode((unsigned char*)b+in,bd+out);
+					for(i=0;i<out;i++)
 						fputc(bd[i], fd);
 				} else fputs(b, fd); 
 			}
