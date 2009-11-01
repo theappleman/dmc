@@ -20,9 +20,7 @@ void b64_encode(unsigned char in[3], unsigned char out[4], int len)
 
 int b64_decode(unsigned char in[4], unsigned char out[3])
 {
-	unsigned char v[4];
-	int len = 3, i;
-
+	unsigned char len = 3, i, v[4];
 	for(i=0;i<4;i++) {
 		if (in[i]<43||in[i]>122)
 			return -1;
@@ -33,7 +31,6 @@ int b64_decode(unsigned char in[4], unsigned char out[3])
 	out[0] = v[0] << 2 | v[1] >> 4;
 	out[1] = v[1] << 4 | v[2] >> 2;
 	out[2] = ((v[2] << 6) & 0xc0) | v[3];
-
 	return len;
 }
 
@@ -64,8 +61,8 @@ int mime_pack(char **files, int nfiles)
 			continue;
 		if (!(fd=fopen(files[i], "r")))
 			continue;
-		printf("\n--dmc-multipart\n");
-		printf("Content-Type: %s", ptr+1);
+		printf( "--dmc-multipart\n");
+		printf( "Content-Type: %s", ptr+1);
 		printf( "Content-Disposition: attachment;"
 				"filename=\"%s\"\n", files[i]);
 		if (strstr(ptr, "text")) {
@@ -77,13 +74,13 @@ int mime_pack(char **files, int nfiles)
 			while((len=fread(b, 1, 57, fd))) {
 				memset(bd,'\0',1024);
 				for(in=out=0;in<len;in+=3,out+=4)
-					b64_encode((unsigned char*)b+in,bd+out,len-in>=3?3:len-in);
+					b64_encode((unsigned char*)b+in,bd+out,len-in>3?3:len-in);
 				printf("%s\n", bd);
 			}
 		}
 		fclose(fd);
 	}
-	printf("\n--dmc-multipart--\n");
+	printf("--dmc-multipart--\n");
 	return 0;
 }
 
@@ -125,17 +122,20 @@ int mime_unpack()
 				if (!dump && filename[0] && (fd = fopen(filename, "w"))) {
 					printf("%s\n", filename);
 					dump = 1;
-				} else {
-					if(dump)
-						fclose(fd);
+					continue;
+				} else if (dump && strstr(encoding, "base64")) { 
+					fclose(fd);
 					boundary[0] = encoding[0] = filename[0] = '\0';
 					dump = 0;
 				}
-			} else if (dump) {
+			} 
+			if (dump) {
 				if (strstr(encoding, "base64")) {
 					memset(bd,'\0',1024);
-					for(in=out=0;in<strlen(b)-1;in+=4,out+=3)
-						b64_decode((unsigned char*)b+in,bd+out);
+					if ((len = strlen(b)) > 0)
+						b[len-1] = '\0';
+					for(in=out=0;in<len-1;in+=4)
+						out+=b64_decode((unsigned char*)b+in,bd+out);
 					for(i=0;i<out;i++)
 						fputc(bd[i], fd);
 				} else fputs(b, fd); 
