@@ -90,7 +90,7 @@ case "$1" in
 	echo "dmc-tag-0.1 (c) 2009 pancake(at)nopcode(dot)org"
 	;;
 "")
-	echo "Usage: dmc-tag [-uhv] [-c [file ..]] [-m dir dir] [[,-u] [file] [[tag ..]]]"
+	echo "Usage: dmc-tag [-uhv] [-l [tag ..]] [-c [file ..]] [-m dir dir] [file ..]"
 	;;
 "-h")
 	$0

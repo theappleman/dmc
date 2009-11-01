@@ -1,12 +1,15 @@
-CC?=gcc
-PREFIX?=/usr
-CFLAGS?=-Wall
+include config.mk
 
-all: dmc-smtp dmc-pop3 dmc-imap4 dmc-pack
+all: config.h dmc-smtp dmc-pop3 dmc-imap4 dmc-pack
+
+config.h: 
+	@echo creating $@ from config.def.h
+	cp config.def.h config.h
 
 dmc-smtp: smtp.o
 	${CC} ${LDFLAGS} smtp.o -o dmc-smtp -lresolv
 
+# sock.c ?
 dmc-pop3: pop3.o
 	${CC} ${LDFLAGS} pop3.o -o dmc-pop3
 
@@ -35,6 +38,13 @@ uninstall:
 
 clean:
 	rm -f dmc-pop3 dmc-imap4 dmc-smtp dmc-pack *.o
+
+dist:
+	mkdir -p dmc-${VERSION}
+	cd dmc-${VERSION} && hg clone .. .
+	rm -rf dmc-${VERSION}/.hg
+	tar czvf dmc-${VERSION}.tar.gz dmc-${VERSION}
+	rm -rf dmc-${VERSION}
 
 loc:
 	sloccount .

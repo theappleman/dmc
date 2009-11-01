@@ -1,0 +1,95 @@
+mail protocols
+==============
+imap4, pop3 ... are implemented as a simple unix-like applications which
+parses a simple shell-like input and convert them into protocol-specific
+queries.
+
+The network layer is abstracted by pipes, so you can use any application
+to provide a transport layer to the protocol. This is 'netcat' for plain
+TCP connections and 'openssl s_client' for SSL ones.
+
+From this point you need a fifo input to feed the program with commands
+and a fifo to get the result of the command.
+
+The mail handler pipeline can be described as follows:
+
+
+                           protocol input
+                      .----------------------------------.
+                      V                                  |
+ +-------+        +-------+          +---------+         |
+ | input | stdin  | pop3  | stdout   | netcat  | stdout  |
+ | fifo  |------->| imap4 |--------->| openssl |---------'
+ +-------+        +-------+          +---------+
+                    |  |
+                    |  | stderr    +--------+  +--------+
+                    |  `---------->| status |  | parsed |
+                    |              +--------+  | output |
+                    | secondary output         | result |
+                    `------------------------->| of cmd |
+                                               +--------+
+
+The understanding of this pipe graph reveals that the protocol application
+requires two input channels and three output ones.
+
+Three of them are just the basic stdin, stdout, stderr filedescriptors,
+and the other two are used to get feedback from the communication channel
+and dump the result of the command to a file.
+
+In a posix shell you can implement the pipeline in this way:
+
+  $ rm -f input fifo-in fifo-out output
+  $ mkfifo input fifo-in fifo-out
+  $ :> output
+  $ (while : ; do cat input ; done ) | \
+    dmc-pop3 fifo-in output 2> fifo-out | nc host port > fifo-in
+
+In this way the fifo-in fifo file is used to push commands to the daemon.
+
+The fifo-out is used for the parent application to get notifications
+when the command has been completely executed. Timeouts are suposed to
+be handled by the protocol handler and the manager application should
+understand that all those protocols are not going to give you results
+inmediately.
+
+An implementation of a manager tool for the previous daemon is:
+
+  $ echo login user pass > fifo-in
+  $ cat fifo-out # lock until command is executed
+  $ cat output   # retrieve result of command
+  ...
+
+The simplest way to test if a protocol handler is working properly is:
+
+  $ dmc-pop3 fifo-in /dev/stderr | nc host port > fifo-in
+
+The pipe graph can be hardly simplified if we embed the transport
+layer inside the program.
+
+               _________________
+              / ssl, host, port \
+              \______,  ________/
+                      \|
+ +-------+        +-------+ stdout      +--------+
+ | input | stdin  | pop3  |------------>| status | fifo lock
+ | fifo  |------->| imap4 |--------.    +--------+
+ +-------+        +-------+ stderr  \   +--------+
+                                     `->| output | truncated file
+                                        +--------+
+
+In this way the *nix pipeline becomes:
+
+  $ dmc-pop3 tcp host port
+
+And the daemon pipeline will look like:
+
+  $ mkfifo input outlock
+  $ :> output
+  $ (while : ; do cat input ; done ) | dmc-pop3 host port 2> outlock > output
+
+PROs:
+ - the pipeline is simpler
+ - the transport can change from plain to ssl
+
+CONs:
+ - ssl cert checks needs to be done inside the application

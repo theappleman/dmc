@@ -1,21 +1,21 @@
 /* dmc :: Copyleft 2009 -- pancake (at) nopcode (dot) org */
 
+#include <poll.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 
 static char *cmd = NULL;
 static char word[4096];
 static int ctr = 1;
-static char *fifo;
-static int ff;
+static char *fifo, *outf;
+static int ff, fo;
 static char *dir;
 
 /* TODO: make getword() ready() and cleanup() shared between smtp,pop,imap? */
@@ -74,7 +74,8 @@ static int waitreply() {
 	int lock = 1;
 	int line = 0;
 	int ret, reply = -1;
-	fflush(stdout);
+	char result[256];
+	ftruncate (fo, 0);
 	while(lock || !ready()) {
 		lock = 0;
 		ret = read(ff, str, 1024);
@@ -91,20 +92,23 @@ static int waitreply() {
 				else
 				if (!memcmp(ptr+1, "NO", 2))
 					reply = 0;
-				else // TODO: Make 'BAD' be -1 ?
+				else // TODO: Do 'BAD' should be -1 ?
 				if (!memcmp(ptr+1, "BAD", 3))
 					reply = 0;
 			}
 			// XXX: Fix output, just show first line
-			fprintf(stderr, "### %s %d \"%s\"\n", cmd, reply, str);
+			snprintf(result, 254, "### %s %d \"%s\"\n", cmd, reply, str);
 		}
 		str = str+strlen(str);
 		line++;
+		write (fo, str, strlen (str));
 	//	fprintf(stderr, "--> %s\n", str);
 	}
-	fprintf(stderr, "==> (((%s)))\n", word);
-	fflush(stderr);
-	write(2, "\x00", 1); // end of output
+	
+	//fprintf (stderr, "==> (((%s)))\n", word);
+	write (fo, word, strlen (word));
+	//fflush (stderr);
+	write (2, result, strlen(result));
 	return reply;
 }
 
@@ -195,18 +199,21 @@ static int doword(char *word) {
 
 int main(int argc, char **argv) {
 	int ret = 0;
-	if (argc>1) {
+	if (argc>2) {
 		signal(SIGINT, cleanup);
 		fifo = argv[1];
-		mkfifo(fifo, 0600);
-		ff = open(fifo, O_RDONLY);
-		if (ff != -1) {
+		outf = argv[2];
+		mkfifo (fifo, 0600);
+		unlink (outf);
+		ff = open (fifo, O_RDONLY);
+		fo = open (outf, O_WRONLY|O_CREAT, 0600);
+		if (ff != -1 && fo != -1) {
 			dir = strdup("");
 			waitreply();
 			while(doword(getword()));
 			cleanup(0);
 			ret = 0;
 		} else fprintf(stderr, "Cannot open fifo file.\n");
-	} else fprintf(stderr, "Usage: dmc-imap4 fifo | nc host 443 > fifo\n");
+	} else fprintf(stderr, "Usage: dmc-imap4 fifo-in fifo-out | nc host 443 > fifo\n");
 	return ret;
 }

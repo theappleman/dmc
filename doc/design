@@ -34,7 +34,10 @@ sync
 
 The sync process is done independently from the backend.
 
- - get list of last 50 mails
+ - get list of last $LIMIT mails
+ - for a in list
+   get checksum of header
+   if header checksum not found in cache
  - TODO
 
 

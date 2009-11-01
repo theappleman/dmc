@@ -16,6 +16,7 @@ mkdir -p ~/.dmc/acc
 
 function acc_daemon {
   FIFO=~/.dmc/tmp/${NAME}.fifo
+  OUTF=~/.dmc/tmp/${NAME}.out
   INPUT=~/.dmc/tmp/${NAME}.input
   OUTPUT=~/.dmc/tmp/${NAME}.output
 
@@ -30,11 +31,13 @@ function acc_daemon {
 
   echo "Starting $NAME account daemon..."
 
-  rm -f "${INPUT}" "${FIFO}"
+  rm -f "${INPUT}" "${FIFO}" "${OUTF}"
   mkfifo "${INPUT}" "${FIFO}"
+# XXX output must be also a fifo?!?
+  :> ${OUTF}
   echo login ${USER} ${PASS} > ${INPUT} &
   (while : ; do cat ${INPUT} 2> /dev/null ; done) | \
-    dmc-${PROTOCOL} $FIFO 2> ${OUTPUT} | $NETCMD > $FIFO
+    dmc-${PROTOCOL} ${FIFO} ${OUTF} 2> ${OUTPUT} | $NETCMD > $FIFO
   rm -f ${INPUT}
 }
 
@@ -46,6 +49,8 @@ function dmc_cmd {
   :> ${OUT}
   echo "$@" > ~/.dmc/tmp/${NAME}.input
   # XXX ultraugly way to check for eof
+  cat ~/.dmc/tmp/${NAME}.output # barrier
+  cat ${OUT}
   osize=0
   while : ; do
     size=`du -hs ${OUT}|awk '{print $1}'`
