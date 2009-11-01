@@ -5,63 +5,77 @@
 
 MD=$1
 if [ -z "${MD}" ]; then
-	echo "Usage: dmc-mdir [Maildir-path]"
-	exit 1
+  echo "Usage: dmc-mdir [Maildir-path]"
+  exit 1
 fi
 
-dir=""
+function mdir_ls {
+  echo "cur $(ls $1/cur | wc -l)" > /dev/stderr
+  echo "new $(ls $1/new | wc -l)" > /dev/stderr
+  echo "tmp $(ls $1/tmp | wc -l)" > /dev/stderr
+}
+
+dir=/
+folder=""
 while : ; do
-	read A
-	arg0=`echo $A | cut -d ' ' -f 1`
-	arg1=`echo $A | cut -d ' ' -f 2-`
-	case $arg0 in
-	"ls")
-		echo "cur $(ls $MD/$dir/cur | wc -l)"
-		echo "new $(ls $MD/$dir/new | wc -l)"
-		echo "tmp $(ls $MD/$dir/tmp | wc -l)"
-		echo "### 1 ls" > /dev/stderr
-		;;
-	"lsd")
-		( cd $MD/$dir ; ls -d .??* | cat )
-		echo "### 1 lsd" > /dev/stderr
-		;;
-	"cat")
-		file=$(ls $MD/$dir | head -n $arg1 | tail -n 1)
-		if [ -f "$file" ]; then
-			cat $file
-			echo "### 1 cat" > /dev/stderr
-		else
-			echo "### 0 cat No such file" > /dev/stderr
-		fi
-		;;
-	"head")
-		dmc-hdr : < $(ls $MD/$dir/tmp | head -n $arg1 | tail -n 1)
-		echo "### 1 head" > /dev/stderr
-		;;
-	"rm")
-		file=$(ls $MD/$dir | head -n $arg1 | tail -n 1)
-		if [ -f "$file" ]; then
-			rm -f $file
-			echo "### 1 rm" > /dev/stderr
-		else
-			echo "### 0 rm No such file" > /dev/stderr
-		fi
-		;;
-	"pwd")
-		echo $dir
-		echo "### 1 pwd" > /dev/stderr
-		;;
-	"login")
-		# ignore
-		;;
-	"exit")
-		exit 0
-		;;
-	"cd")
-		dir=$arg1
-		;;
-	*)
-		echo "Usage: ls lsd cat cd"
-		;;
-	esac
+  read A
+  arg0=`echo $A | cut -d ' ' -f 1`
+  arg1=`echo $A | cut -d ' ' -f 2-`
+  case $arg0 in
+  "ls")
+    mdir_ls $MD/$dir
+    echo "### 1 ls"
+    ;;
+  "lsd")
+    ( cd $MD/$dir ; ls -d .??* | cat ) > /dev/stderr
+    echo "### 1 lsd"
+    ;;
+  "cat")
+    fold=`echo $arg1|cut -d / -f 1`
+    arg1=`echo $arg1|cut -d / -f 2`
+    if [ -z "$arg1" ]; then
+      echo "### 0 cat Usage cat [cur|new|tmp]/[mail-index]"
+    else
+      file=$(ls $MD/$dir/$fold | head -n $arg1 | tail -n 1)
+      file="$MD/$dir/$fold/$file"
+      if [ -f "$file" ]; then
+        cat $file > /dev/stderr
+        echo "### 1 cat"
+      else
+        echo "### 0 cat No such file '$file'"
+      fi
+    fi
+    ;;
+  "head")
+    dmc-hdr : < $(ls $MD/$dir/tmp | head -n $arg1 | tail -n 1) > /dev/stderr
+    echo "### 1 head" 
+    ;;
+  "rm")
+    file=$(ls $MD/$dir | head -n $arg1 | tail -n 1)
+    if [ -f "$file" ]; then
+      rm -f $file
+      echo "### 1 rm"
+    else
+      echo "### 0 rm No such file"
+    fi
+    ;;
+  "pwd")
+    echo $dir > /dev/stderr
+    echo "### 1 pwd $dir"
+    ;;
+  "login")
+    # ignore
+    echo "### 1 login Successful"
+    ;;
+  "exit")
+    echo "### 1 exit ciao ciao"
+    exit 0
+    ;;
+  "cd")
+    dir=$arg1
+    ;;
+  *)
+    echo "Usage: ls lsd cat head rm cd pwd login exit"
+    ;;
+  esac
 done
