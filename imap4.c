@@ -53,26 +53,20 @@ reread:
 	return word;
 }
 
-static void cleanup (void) {
-	sock_close ();
-	exit (0);
-}
-
 static int waitreply() {
-	char *ptr, *str = word;
+	char *ptr;
 	int lock = 1;
 	int line = 0;
 	int reply = -1;
 	char result[256];
 
 	ftruncate (2, 0);
-	*str = 0;
-	result[0] = '\0';
+	word[0] = result[0] = '\0';
 	while(lock || sock_ready()) {
 		lock = 0;
-		if (sock_read (str, 2024) <1)
+		if (sock_read (word, 2024) <1)
 			break;
-		if (line == 0) {
+		if (line++ == 0) {
 			ptr = strchr(word, ' ');
 			if (ptr) {
 				if (!memcmp(ptr+1, "OK", 2))
@@ -84,13 +78,11 @@ static int waitreply() {
 				if (!memcmp(ptr+1, "BAD", 3))
 					reply = 0;
 			}
-			snprintf (result, 254, "### %s %d \"%s\"\n", cmd, reply, str);
+			snprintf (result, 254, "### %s %d \"%s\"\n", cmd, reply, word);
 		}
-		str = str+strlen(str);
-		line++;
+		write (2, word, strlen (word));
 	}
 	
-	write (2, word, strlen (word));
 	write (1, result, strlen(result));
 	return reply;
 }
@@ -186,7 +178,7 @@ int main (int argc, char **argv) {
 			ssl = (*argv[3]=='1');
 		if (sock_connect (argv[1], atoi (argv[2]), ssl) >= 0) {
 			ret = 0;
-			atexit (cleanup);
+			atexit (sock_close);
 			waitreply ();
 			dir = strdup ("");
 			while (doword (getword()));

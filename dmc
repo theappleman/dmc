@@ -23,7 +23,7 @@ function acc_daemon {
 
   rm -f "${LOCK}" "${INPUT}" "${OUTPUT}"
   mkfifo "${LOCK}" "${INPUT}"
-  echo login ${USER} ${PASS} > ${INPUT} &
+  (sleep 2 ; echo login ${USER} ${PASS} > ${INPUT} ) &
   (while : ; do cat ${INPUT} 2> /dev/null ; done) | \
     dmc-${PROTOCOL} ${HOST} ${PORT} ${SSL} 2> ${OUTPUT} > ${LOCK}
   rm -f "${LOCK}" "${INPUT}" "${OUTPUT}"
@@ -157,9 +157,9 @@ case "$1" in
     rm -f ~/.dmc/tmp/$a
   done
   sleep 1
-  pkill cat
   rm -f ~/.dmc/tmp/*
   pkill dmc
+  pkill cat
   ;;
 "push")
   for a in ~/.dmc/acc/* ; do

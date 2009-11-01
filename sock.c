@@ -69,11 +69,11 @@ static int sock_ready() {
   return poll((struct pollfd *)&fds, 1, 10);
 }
 
-int sock_close () {
+void sock_close () {
 #if HAVE_SSL
   SSL_free (sfd);
 #endif
-  return close (fd);
+  close (fd);
 }
 
 int sock_write (const char *str) {

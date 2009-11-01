@@ -5,7 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 
-
 /* XXX: here? */
 static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char cd64[]="|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
@@ -142,6 +141,7 @@ void mime_unpack()
 	}
 }
 
+/* TODO: Implement dmc-pack -l to only list filenames attached to the mail */
 int main(int argc, char **argv)
 {
 	if(argc < 2 || !strcmp(argv[1], "-h"))

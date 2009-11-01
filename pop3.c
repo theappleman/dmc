@@ -28,7 +28,7 @@ static int waitreply() {
 	int reply = -1;
 
 	ftruncate (2, 0);
-	while(lock || sock_ready()) {
+	while (lock || sock_ready()) {
 		lock = 0;
 		if (sock_read (word, 512) <1)
 			break;
@@ -50,13 +50,9 @@ static int waitreply() {
 		ch = strstr (str, "\r\n.");
 		if (ch)
 			*ch = '\0';
-		//fprintf(stderr, "%s\n", str);
-		fputs (str, stderr);
+		write (2, str, strlen (str));
 	}
-	fputs ("", stderr);
-	fflush (stderr);
-	fputs (result, stdout);
-	fflush (stdout);
+	write (1, result, strlen (result));
 	/* stderr lseek works on pipes :D */
 	lseek (2, 0, 0);
 	return reply;
@@ -103,11 +99,6 @@ static int doword (char *word) {
 	return ret;
 }
 
-static void cleanup (void) {
-	sock_close ();
-	exit (0);
-}
-
 int main(int argc, char **argv) {
 	int ssl = 0, ret = 1;
 	if (argc>2) {
@@ -115,7 +106,7 @@ int main(int argc, char **argv) {
 			ssl = (*argv[3]=='1');
 		if (sock_connect (argv[1], atoi (argv[2]), ssl) >= 0) {
 			ret = 0;
-			atexit (cleanup);
+			atexit (sock_close);
 			waitreply ();
 			while (doword (getword()));
 		} else fprintf (stderr, "Cannot connect to %s %d\n", argv[1], atoi(argv[2]));
