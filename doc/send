@@ -1,0 +1,13 @@
+dmc-send
+========
+
+send methods (in config.h?)
+ - mbox write
+ - maildir write
+ - |mail
+ - |msmtp
+ - MX + connect (auto smtp)
+ - nc localhost 25
+
+Must support more than one chained send methods
+ - to move a mail into the sent folder f.ex?

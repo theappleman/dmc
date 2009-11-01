@@ -1,1 +1,1 @@
-#define HAVE_SSL 0
+#define HAVE_SSL 1

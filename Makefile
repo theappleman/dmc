@@ -1,20 +1,26 @@
 include config.mk
 
+ifeq ($(HAVE_SSL),1)
+SSL_LIBS=`pkg-config libssl --libs`
+CFLAGS+=`pkg-config libssl --cflags`
+endif
+
 all: config.h dmc-smtp dmc-pop3 dmc-imap4 dmc-pack
 
 config.h: 
 	@echo creating $@ from config.def.h
 	cp config.def.h config.h
+	${MAKE} clean
 
 dmc-smtp: smtp.o
 	${CC} ${LDFLAGS} smtp.o -o dmc-smtp -lresolv
 
 # sock.c ?
 dmc-pop3: pop3.o
-	${CC} ${LDFLAGS} pop3.o -o dmc-pop3
+	${CC} ${LDFLAGS} ${SSL_LIBS} pop3.o -o dmc-pop3
 
 dmc-imap4: imap4.o
-	${CC} ${LDFLAGS} imap4.o -o dmc-imap4
+	${CC} ${LDFLAGS} ${SSL_LIBS} imap4.o -o dmc-imap4
 
 dmc-pack: pack.o
 	${CC} ${LDFLAGS} pack.o -o dmc-pack

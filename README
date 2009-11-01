@@ -5,9 +5,7 @@ dmc is a minimalist email client solution
 
 Requirements
 ------------
-  netcat (nc) for plain TCP connections
-  openssl binary for SSL encrypted
-  msmtp if you want to use
+  msmtp to send emails (dmc-smtp is not implemented yet)
 
 
 Installation

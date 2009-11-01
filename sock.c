@@ -13,15 +13,36 @@
 #if HAVE_SSL
 #include <openssl/ssl.h>
 static int ssl = 0;
+static SSL_CTX *ctx;
+static SSL *sfd;
 #endif
 
 static int fd = -1;
 
+int sock_ssl (int enable) {
+#if HAVE_SSL
+  int err;
+  if (ssl) {
+    // challenge, check cert, etc..
+    sfd = SSL_new (ctx);
+    SSL_set_fd (sfd, fd);
+    err = SSL_connect (sfd);
+    /* TODO: check cert */
+    SSL_set_accept_state (sfd);
+  }
+  ssl = enable;
+  return 1;
+#else
+  return 0;
+#endif
+}
+
 // TODO: cleanup all those fd=-1
-int sock_connect (const char *host, int port) {
+int sock_connect (const char *host, int port, int ssl) {
   struct sockaddr_in sa;
   struct hostent *he;
   int s = socket (AF_INET, SOCK_STREAM, 0);
+  sock_ssl (ssl);
   fd = -1;
   if (s != -1) {
     fd = s;
@@ -49,10 +70,18 @@ static int sock_ready() {
 }
 
 int sock_close () {
+#if HAVE_SSL
+  SSL_free (sfd);
+#endif
   return close (fd);
 }
 
 int sock_write (const char *str) {
+#if HAVE_SSL
+  if (ssl)
+    return SSL_write (sfd, str, strlen(str));
+  else
+#endif
   return write (fd, str, strlen(str));
 }
 
@@ -69,7 +98,13 @@ int sock_printf (const char *fmt, ...) {
 }
 
 int sock_read (char *buf, int len) {
-  int ret = read (fd, buf, 1024);
+  int ret;
+#if HAVE_SSL
+  if (ssl)
+    ret = SSL_read (sfd, buf, 1024);
+  else
+#endif
+    ret = read (fd, buf, 1024);
   if (ret>0)
     buf[ret] = '\0';
   return ret;

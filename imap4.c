@@ -9,13 +9,11 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "sock.c"
 
 static char *cmd = NULL;
 static char word[4096];
 static int ctr = 1;
-static char *fifo, *outf;
-static int ff, fo;
 static char *dir;
 
 /* TODO: make getword() ready() and cleanup() shared between smtp,pop,imap? */
@@ -55,35 +53,25 @@ reread:
 	return word;
 }
 
-static void cleanup(int foo) {
-	close(ff);
-	unlink(fifo);
-	exit(0);
-}
-
-static int ready() {
-        struct pollfd fds[1];
-        fds[0].fd = ff;
-        fds[0].events = POLLIN|POLLPRI;
-        fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
-        return poll((struct pollfd *)&fds, 1, 10);
+static void cleanup (void) {
+	sock_close ();
+	exit (0);
 }
 
 static int waitreply() {
 	char *ptr, *str = word;
 	int lock = 1;
 	int line = 0;
-	int ret, reply = -1;
+	int reply = -1;
 	char result[256];
-	ftruncate (fo, 0);
-	while(lock || !ready()) {
+
+	ftruncate (2, 0);
+	*str = 0;
+	result[0] = '\0';
+	while(lock || sock_ready()) {
 		lock = 0;
-		ret = read(ff, str, 1024);
-		if (ret<1) {
-			fprintf(stderr, " BREAK BREAK\n");
+		if (sock_read (str, 2024) <1)
 			break;
-		}
-		str[ret] = 0;
 		if (line == 0) {
 			ptr = strchr(word, ' ');
 			if (ptr) {
@@ -96,19 +84,14 @@ static int waitreply() {
 				if (!memcmp(ptr+1, "BAD", 3))
 					reply = 0;
 			}
-			// XXX: Fix output, just show first line
-			snprintf(result, 254, "### %s %d \"%s\"\n", cmd, reply, str);
+			snprintf (result, 254, "### %s %d \"%s\"\n", cmd, reply, str);
 		}
 		str = str+strlen(str);
 		line++;
-		write (fo, str, strlen (str));
-	//	fprintf(stderr, "--> %s\n", str);
 	}
 	
-	//fprintf (stderr, "==> (((%s)))\n", word);
-	write (fo, word, strlen (word));
-	//fflush (stderr);
-	write (2, result, strlen(result));
+	write (2, word, strlen (word));
+	write (1, result, strlen(result));
 	return reply;
 }
 
@@ -121,7 +104,7 @@ CLOSE - commit the delete stuff (maybe must be done after rm)
 EXPUNGE - permanent remove of deltec
 RECENT - show the number of recent messages
 #endif
-static int doword(char *word) {
+static int doword (char *word) {
 	int ret = 1;
 	free (cmd);
 	cmd = strdup(word);
@@ -129,12 +112,12 @@ static int doword(char *word) {
 		/* Do nothing */
 	} else
 	if (!strcmp(word, "exit")) {
-		printf("%d LOGOUT\n", ctr++);
+		sock_printf("%d LOGOUT\n", ctr++);
 		waitreply();
 		ret = 0;
 	} else
 	if (!strcmp(word, "help") || !strcmp(word, "?")) {
-		fprintf(stderr, "Use: login exit find ls cat head rm rmdir mkdir mvdir\n");
+		fprintf(stderr, "Use: login exit find cd pwd ls cat head rm rmdir mkdir mvdir\n");
 	} else
 	if (!strcmp(word, "pwd")) {
 		fprintf(stderr, "%s\n", dir);
@@ -144,38 +127,37 @@ static int doword(char *word) {
 		dir = strdup(getword());
 		if (!strcmp(dir, "\"\""))
 			*dir=0;
-		printf("%d SELECT \"%s\"\n", ctr++, dir);
+		sock_printf ("%d SELECT \"%s\"\n", ctr++, dir);
 		waitreply();
 	} else
 	if (!strcmp(word, "find")) {
-		printf("%d SEARCH TEXT \"%s\"\n", ctr++, getword());
+		sock_printf ("%d SEARCH TEXT \"%s\"\n", ctr++, getword());
 		waitreply();
 	} else
 	if (!strcmp(word, "ls")) {
-		printf("%d LIST \"%s\" *\n", ctr++, dir);
+		sock_printf ("%d LIST \"%s\" *\n", ctr++, dir);
 		waitreply();
 	} else
 	if (!strcmp(word, "cat")) {
-		printf("%d FETCH %d body[]\n",
+		sock_printf ("%d FETCH %d body[]\n",
 			ctr++, atoi(getword()));
 		waitreply();
 	} else
 	if (!strcmp(word, "head")) {
-		printf("%d FETCH %d body[header]\n",
+		sock_printf ("%d FETCH %d body[header]\n",
 			ctr++, atoi(getword()));
 		waitreply();
 	} else
 	if (!strcmp(word, "mvdir")) {
-		printf("%d RENAME %s %s\n",
+		sock_printf ("%d RENAME %s %s\n",
 			ctr++, getword(), getword());
 	} else
 	if (!strcmp(word, "mkdir")) {
-		printf("%d CREATE \"%s\"\n",
-			ctr++, getword());
+		sock_printf ("%d CREATE \"%s\"\n", ctr++, getword());
 	} else
 	if (!strcmp(word, "rm")) {
-		printf("%d DELE %d\n", ctr++, atoi(getword()));
-		waitreply();
+		sock_printf ("%d DELE %d\n", ctr++, atoi(getword()));
+		waitreply ();
 	} else
 	if (!strcmp(word, "rmdir")) {
 		printf("%d DELETE \"%s\"\n",
@@ -183,37 +165,32 @@ static int doword(char *word) {
 		waitreply();
 	} else
 	if (!strcmp(word, "login")) {
-		char *user = strdup(getword());
-		char *pass = strdup(getword());
-		printf("%d LOGIN \"%s\" \"%s\"\n",
+		char *user = strdup (getword ());
+		char *pass = strdup (getword ());
+		sock_printf ("%d LOGIN \"%s\" \"%s\"\n",
 			ctr++, user, pass);
-		free(user);
-		free(pass);
+		free (user);
+		free (pass);
 		waitreply();
 	} else {
-		printf("%d NOOP\n", ctr++);
+		sock_printf ("%d NOOP\n", ctr++);
 		waitreply();
 	}
 	return ret;
 }
 
-int main(int argc, char **argv) {
-	int ret = 0;
+int main (int argc, char **argv) {
+	int ssl = 0, ret = 0;
 	if (argc>2) {
-		signal(SIGINT, cleanup);
-		fifo = argv[1];
-		outf = argv[2];
-		mkfifo (fifo, 0600);
-		unlink (outf);
-		ff = open (fifo, O_RDONLY);
-		fo = open (outf, O_WRONLY|O_CREAT, 0600);
-		if (ff != -1 && fo != -1) {
-			dir = strdup("");
-			waitreply();
-			while(doword(getword()));
-			cleanup(0);
+		if (argc>3)
+			ssl = (*argv[3]=='1');
+		if (sock_connect (argv[1], atoi (argv[2]), ssl) >= 0) {
 			ret = 0;
-		} else fprintf(stderr, "Cannot open fifo file.\n");
-	} else fprintf(stderr, "Usage: dmc-imap4 fifo-in fifo-out | nc host 443 > fifo\n");
+			atexit (cleanup);
+			waitreply ();
+			dir = strdup ("");
+			while (doword (getword()));
+		} else fprintf (stderr, "Cannot connect to %s %d\n", argv[1], atoi(argv[2]));
+	} else fprintf(stderr, "Usage: dmc-imap4 host port 2> body > fifo < input\n");
 	return ret;
 }

@@ -22,7 +22,7 @@ static char *getword () {
 }
 
 static int waitreply() {
-	char result[1024];
+	char result[256];
 	char *ch, *str = word;
 	int lock = 1;
 	int reply = -1;
@@ -47,16 +47,16 @@ static int waitreply() {
 			}
 		}
 		// TODO: \r \n issues
-		ch = strstr(str, "\r\n.");
+		ch = strstr (str, "\r\n.");
 		if (ch)
 			*ch = '\0';
 		//fprintf(stderr, "%s\n", str);
 		fputs (str, stderr);
 	}
-	fputs("", stderr);
-	fflush(stderr);
+	fputs ("", stderr);
+	fflush (stderr);
 	fputs (result, stdout);
-	fflush(stdout);
+	fflush (stdout);
 	/* stderr lseek works on pipes :D */
 	lseek (2, 0, 0);
 	return reply;
@@ -109,15 +109,16 @@ static void cleanup (void) {
 }
 
 int main(int argc, char **argv) {
-	int ret = 1;
+	int ssl = 0, ret = 1;
 	if (argc>2) {
-		if (sock_connect (argv[1], atoi (argv[2])) >= 0) {
+		if (argc>3)
+			ssl = (*argv[3]=='1');
+		if (sock_connect (argv[1], atoi (argv[2]), ssl) >= 0) {
 			ret = 0;
 			atexit (cleanup);
 			waitreply ();
 			while (doword (getword()));
-			cleanup ();
 		} else fprintf (stderr, "Cannot connect to %s %d\n", argv[1], atoi(argv[2]));
-	} else fprintf (stderr, "Usage: dmc-pop3 host port 2> body > fifo < input\n");
+	} else fprintf (stderr, "Usage: dmc-pop3 host port [ssl] 2> body > fifo < input\n");
 	return 0;
 }
