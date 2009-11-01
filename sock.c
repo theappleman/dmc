@@ -100,10 +100,10 @@ int sock_read (char *buf, int len) {
   int ret;
 #if HAVE_SSL
   if (ssl)
-    ret = SSL_read (sfd, buf, 1024);
+    ret = SSL_read (sfd, buf, len);
   else
 #endif
-    ret = read (fd, buf, 1024);
+    ret = read (fd, buf, len);
   if (ret>0)
     buf[ret] = '\0';
   return ret;
