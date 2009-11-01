@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 			ret = 0;
 			atexit (sock_close);
 			waitreply ();
-			while (doword (getword()));
+			while (doword (getword ()));
 		} else fprintf (stderr, "Cannot connect to %s %d\n", argv[1], atoi(argv[2]));
 	} else fprintf (stderr, "Usage: dmc-pop3 host port [ssl] 2> body > fifo < input\n");
 	return 0;
