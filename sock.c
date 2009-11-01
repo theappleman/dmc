@@ -8,7 +8,6 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "config.h"
 
 #if HAVE_SSL
 #include <openssl/ssl.h>

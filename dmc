@@ -1,8 +1,6 @@
 #!/bin/sh
-#
 # dmc - dynamic mail client
 # Copyleft 2009 -- pancake <at> nopcode <dot> org
-#
 
 VERSION="0.1"
 COPYRIGHT="Copyleft -- pancake@nopcode.org"

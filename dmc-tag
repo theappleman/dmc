@@ -1,9 +1,7 @@
 #!/bin/sh
-#
 # dmc - dynamic mail client
 # Copyleft 2009 -- pancake <at> nopcode <dot> org
 # TODO: rewrite in C
-#
 
 [ -z "${DMCTAG_ROOT}" ] && \
 	DMCTAG_ROOT="${HOME}/.dmctag"

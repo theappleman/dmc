@@ -4,12 +4,14 @@ ifeq ($(HAVE_SSL),1)
 SSL_LIBS=`pkg-config libssl --libs`
 CFLAGS+=`pkg-config libssl --cflags`
 endif
+CFLAGS+=-DHAVE_SSL=${HAVE_SSL}
+CFLAGS+=-DVERSION=\"${VERSION}\"
 
-all: config.h dmc-smtp dmc-pop3 dmc-imap4 dmc-pack
+all: config.mk dmc-smtp dmc-pop3 dmc-imap4 dmc-pack
 
-config.h: 
-	@echo creating $@ from config.def.h
-	cp config.def.h config.h
+config.mk: 
+	@echo creating $@ from config.def.mk
+	cp config.def.mk config.mk
 	${MAKE} clean
 
 dmc-smtp: smtp.o

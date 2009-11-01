@@ -6,13 +6,18 @@ dmc is a minimalist email client solution
 Requirements
 ------------
   msmtp to send emails (dmc-smtp is not implemented yet)
+  openssl to build with SSL support
 
 
 Installation
 ------------
 Few binaries will be copied into the bin directory
 
-    make all install PREFIX=/usr
+  make all install PREFIX=/usr
+
+If you want to build dmc without SSL edit config.mk or type:
+
+  make HAVE_SSL=0
 
 
 Configuration
@@ -20,7 +25,7 @@ Configuration
 Accounting information is stored in ~/.dmc/acc and can be
 edited with
 
-    dmc -e myaccount
+  dmc -e myaccount
 
 Type your signature in ~/.dmc/signature
 
@@ -28,15 +33,15 @@ Running
 -------
 Start it in daemon mode
 
-    dmc -d
+  dmc -d
 
 To send a mail add the contact to your addressbook
 
-   echo 'user <foo@bar.com>' > ~/.dmc/addrbook
+  echo 'user <foo@bar.com>' > ~/.dmc/addrbook
 
  or edit the addressbook
 
-   dmc -a
+  dmc -a
 
 Then type the mail:
 
