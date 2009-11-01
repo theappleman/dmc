@@ -34,7 +34,7 @@ int b64_decode(unsigned char in[4], unsigned char out[3])
 	return len;
 }
 
-int mime_pack(char **files, int nfiles)
+void mime_pack(char **files, int nfiles)
 {
 	FILE *fd = NULL;
 	char b[1024], cmd[1024], *ptr = NULL;
@@ -81,13 +81,12 @@ int mime_pack(char **files, int nfiles)
 		fclose(fd);
 	}
 	printf("--dmc-multipart--\n");
-	return 0;
 }
 
-int mime_unpack()
+void mime_unpack()
 {
 	FILE *fd = NULL;
-	char b[1024], boundary[1024], encoding[1024], filename[1024],*ptr = NULL;
+	char b[1024], boundary[1024], encoding[1024], filename[1024], *ptr = NULL;
 	unsigned char bd[1024];
 	int entity = 0, dump = 0, len, in, out, i;
 
@@ -97,18 +96,16 @@ int mime_unpack()
 		if (!memcmp(b, "--", 2)) {
 			if (boundary[0] && strstr(b, boundary) &&
 					!memcmp(b+strlen(b)-3, "--", 2)) {
-				if (dump)
-					fclose(fd);
-				boundary[0] = encoding[0] = filename[0] = '\0';
-				entity = dump = 0;
+				entity = 0;
+				dump = 0;
 			} else {
 				strncpy(boundary, b+2, 1023);
 				if ((len = strlen(boundary)) > 0)
 					boundary[len-1] = '\0';
 				if (fgets(b, 1023, stdin) && strstr(b, "Content-Type:")) {
-					dump = 0;
 					entity = 1;
-				} else boundary[0] = encoding[0] = filename[0] = '\0';
+					dump = 0;
+				}
 			}
 		}
 		if (entity) {
@@ -123,26 +120,26 @@ int mime_unpack()
 					printf("%s\n", filename);
 					dump = 1;
 					continue;
-				} else if (dump && strstr(encoding, "base64")) { 
-					fclose(fd);
-					boundary[0] = encoding[0] = filename[0] = '\0';
+				} else if (dump && strstr(encoding, "base64"))
 					dump = 0;
-				}
 			} 
-			if (dump) {
-				if (strstr(encoding, "base64")) {
-					memset(bd,'\0',1024);
-					if ((len = strlen(b)) > 0)
-						b[len-1] = '\0';
-					for(in=out=0;in<len-1;in+=4)
-						out+=b64_decode((unsigned char*)b+in,bd+out);
-					for(i=0;i<out;i++)
-						fputc(bd[i], fd);
-				} else fputs(b, fd); 
-			}
+		} else boundary[0] = '\0';
+		if (dump) {
+			if (strstr(encoding, "base64")) {
+				memset(bd,'\0',1024);
+				if ((len = strlen(b)) > 0)
+					b[len-1] = '\0';
+				for(in=out=0;in<len-1;in+=4)
+					out+=b64_decode((unsigned char*)b+in,bd+out);
+				for(i=0;i<out;i++)
+					fputc(bd[i], fd);
+			} else fputs(b, fd); 
+		} else if (fd) {
+			fclose(fd);
+			fd = NULL;
+			encoding[0] = filename[0] = '\0';
 		}
 	}
-	return 0;
 }
 
 int main(int argc, char **argv)
