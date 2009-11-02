@@ -36,19 +36,16 @@ static int waitreply (int res) {
 			break;
 		if (reply==-1) {
 			ch = strchr (str, '\r');
-			if (!ch) ch = strchr (str, '\n');
+			if (!ch)
+				ch = strchr (str, '\n');
 			if (ch) {
-				if (!memcmp (word, "+OK", 3))
-					reply = 1;
-				else
-				if (!memcmp (word, "-ERR", 4))
-					reply = 0;
+				reply = (word[0] == '+')
 				*ch = 0;
 				snprintf (result, 1023, "### %s %d \"%s\"\n", cmd, reply, str);
 				str = ch+((ch[1]=='\n')?2:1);
 			}
 		}
-		// TODO: \r \n issues
+		// TODO: Fix possible \r\n issues
 		ch = strstr (str, "\r\n.");
 		if (ch)
 			*ch = '\0';
@@ -84,15 +81,15 @@ static int doword (char *word) {
 		waitreply (1);
 	} else
 	if (!strcmp(word, "cat")) {
-		sock_printf ("RETR %d\n", atoi(getword()));
+		sock_printf ("RETR %d\n", atoi (getword()));
 		waitreply (1);
 	} else
 	if (!strcmp(word, "head")) {
-		sock_printf ("TOP %d 50\n", atoi(getword()));
+		sock_printf ("TOP %d 50\n", atoi (getword()));
 		waitreply (1);
 	} else
 	if (!strcmp(word, "rm")) {
-		sock_printf ("DELE %d\n", atoi(getword()));
+		sock_printf ("DELE %d\n", atoi (getword()));
 		waitreply (1);
 	} else
 	if (!strcmp(word, "login")) {

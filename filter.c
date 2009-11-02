@@ -4,18 +4,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main (int argc, char **argv)
-{
+int main (int argc, char **argv) {
 	char b[1024], *ptr;
 	int edit = argc, print, i;
 
 	for (i = 0; i < argc; i++)
 		if (!strcmp (argv[i], "-h")) {
-			printf ("usage: [fields | :] %s [-he] [new fields]\n", argv[0]);
+			fprintf (stderr, "Usage: [fields | :] %s [-he] [new fields]\n", argv[0]);
 			return 1;
 		} else if (!strcmp (argv[i], "-e"))
 			edit = i + 1;
-
 	memset (b, '\0', 1024);
 	/* Headers */
 	while (fgets (b, 1023, stdin) && b[0] != '\n')
