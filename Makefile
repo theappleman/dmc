@@ -57,8 +57,8 @@ clean:
 	rm -f ${BINS} *.o
 
 dist:
-	mkdir -p dmc-${VERSION}
-	cd dmc-${VERSION} && hg clone .. .
+	rm -rf dmc-${VERSION}
+	hg clone . dmc-${VERSION}
 	rm -rf dmc-${VERSION}/.hg
 	tar czvf dmc-${VERSION}.tar.gz dmc-${VERSION}
 	rm -rf dmc-${VERSION}
