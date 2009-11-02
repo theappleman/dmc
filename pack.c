@@ -37,22 +37,22 @@ void mime_pack(char **files, int nfiles) {
   unsigned char bd[1024];
   int header = 1, len, in, out, i;
 
-  memset(b, '\0', 1024);
-  while(fgets(b, 1023, stdin)) {
+  memset (b, '\0', 1024);
+  while(fgets (b, 1023, stdin)) {
     if (header && b[0] == '\n') {
-      printf( "Content-Type: multipart/mixed; boundary=\"dmc-multipart\"\n\n"
+      printf ("Content-Type: multipart/mixed; boundary=\"dmc-multipart\"\n\n"
           "--dmc-multipart\n"
           "Content-Type: text/plain\n");
       header = 0;
     }
-    printf("%s", b);
+    printf ("%s", b);
   }
   for(i = 0; i < nfiles; i++) {
-    snprintf(cmd, 1023, "file -i \"%s\"", files[i]);
-    if (!(fd=popen(cmd, "r")))
+    snprintf (cmd, 1023, "file -i \"%s\"", files[i]);
+    if (!(fd=popen (cmd, "r")))
       continue;
-    fgets(b, 1023, fd);
-    pclose(fd);
+    fgets (b, 1023, fd);
+    pclose (fd);
     if (!(ptr = strchr(b, ' ')))
       continue;
     if (!(fd=fopen(files[i], "r")))
@@ -79,16 +79,15 @@ void mime_pack(char **files, int nfiles) {
   printf("--dmc-multipart--\n");
 }
 
-void mime_unpack()
-{
+void mime_unpack (int xtr) {
   FILE *fd = NULL;
   char b[1024], boundary[1024], encoding[1024], filename[1024], *ptr = NULL;
   unsigned char bd[1024];
   int entity = 0, dump = 0, len, in, out, i;
 
   boundary[0] = encoding[0] = filename[0] = '\0';
-  memset(b, '\0', 1024);
-  while(fgets(b, 1023, stdin)) {
+  memset (b, '\0', 1024);
+  while (fgets(b, 1023, stdin)) {
     if (!memcmp(b, "--", 2)) {
       if (boundary[0] && strstr(b, boundary) &&
           !memcmp(b+strlen(b)-3, "--", 2)) {
@@ -112,12 +111,17 @@ void mime_unpack()
         if ((len=strlen(filename)) > 1)
           filename[len-2] = '\0';
       } else if (b[0] == '\n') {
-        if (!dump && filename[0] && (fd = fopen(filename, "w"))) {
-          printf("%s\n", filename);
-          dump = 1;
-          continue;
-        } else if (dump && strstr(encoding, "base64"))
-          dump = 0;
+        if (xtr) {
+          if (!dump && filename[0] && (fd = fopen(filename, "w"))) {
+            printf("%s\n", filename);
+            dump = 1;
+            continue;
+          } else if (dump && strstr(encoding, "base64"))
+            dump = 0;
+        } else {
+          if (!dump && filename[0])
+            printf("%s\n", filename);
+        }
       } 
     } else boundary[0] = '\0';
     if (dump) {
@@ -140,10 +144,12 @@ void mime_unpack()
 
 /* TODO: Implement dmc-pack -l to only list filenames attached to the mail */
 int main(int argc, char **argv) {
-  if(argc < 2 || !strcmp(argv[1], "-h"))
-    printf("usage: %s [-uh | attachment1 attachment2...]\n", argv[0]);
-  else if(!strcmp(argv[1], "-u"))
-    mime_unpack();
+  if (argc < 2 || !strcmp(argv[1], "-h"))
+    printf("usage: %s [-hlu | attachment1 attachment2...] < mail\n", argv[0]);
+  else if (!strcmp(argv[1], "-l"))
+    mime_unpack (0);
+  else if (!strcmp(argv[1], "-u"))
+    mime_unpack (1);
   else mime_pack(argv+1, argc-1);
   return 0;
 }

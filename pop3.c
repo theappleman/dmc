@@ -29,6 +29,7 @@ static int waitreply (int res) {
 
 	result[0] = 0;
 	ftruncate (2, 0);
+	lseek (2, 0, SEEK_SET);
 	while (lock || sock_ready ()) {
 		lock = 0;
 		if (sock_read (word, 512) <1)
@@ -59,7 +60,6 @@ static int waitreply (int res) {
 			snprintf (result, 1023, "### %s %d \"\"\n", cmd, reply);
 		write (1, result, strlen (result));
 	}
-	lseek(1, 0, SEEK_SET);
 	return reply;
 }
 

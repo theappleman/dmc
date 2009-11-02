@@ -30,7 +30,7 @@ function acc_daemon {
 
 function dmc_cmd {
   echo "$@" > ~/.dmc/tmp/${NAME}.input
-  head -n 1 ~/.dmc/tmp/${NAME}.lock
+  head -n 1 ~/.dmc/tmp/${NAME}.lock > /dev/stderr
   cat ~/.dmc/tmp/${NAME}.output
 }
 
@@ -132,8 +132,8 @@ function pull_mails {
   # This is pop3-only
   i=1
   while [ ! "$LIMIT" = "$i" ] ; do
-    dmc -c cat $i > ~/.dmc/box/${NAME}/in/$i.eml
-    if [ -n "`head -n 3 ~/.dmc/box/${NAME}/in/$i.eml | grep ERR`" ]; then
+    dmc -c cat $i > ~/.dmc/box/${NAME}/in/$i.eml 2> ~/.dmc/tmp/${NAME}.tmp
+    if [ -n "`cat ~/.dmc/tmp/${NAME}.tmp | grep ERR`" ]; then
       rm ~/.dmc/box/${NAME}/in/$i.eml
       break
     else
