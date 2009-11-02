@@ -1,0 +1,83 @@
+dmc gui
+=======
+
+There are obviously so many ways to implement a frontend for a commandline
+application, but I will try to cover from the pragmatic perspective to the
+most important usability tips in this document.
+
+Feel free to report ideas/bugs/changes.
+
+Here there are some conceptual textshots:
+
+$ gdmc
+
+Account list
+
+  .--------------------.
+  | Accounts           |
+  |--------------------|
+  |_                   | --> double click opens account
+  |_                   |
+  |_                   |
+  |_                   |
+  |____________________|
+  | [del] [edit] [add] |
+  `--------------------'
+
+Add/edit account
+
+  .------------------.
+  | Account XXXX     |
+  |------------------|
+  | Name |__________||
+  | Protocol |_pop3_||
+  | User |__________||
+  | Password |***___||
+  |                  |
+  | ...              |
+  `------------------'
+
+Addressbook
+
+$ gdmc -a
+
+  .-------------------.
+  | Addressbook       |
+  |-------------------|
+  | name <addr@host>  |
+  | ...               |
+  |___________________|
+  |       [del] [add] |
+  `-------------------'
+
+$ gdmc my-imap-account
+
+Folder view
+
+  .--------------.   .--> combobox
+  | [ folder   ] | --'         optional date column -.
+  |--------------|      __________________________ __V___
+  |_             | --> | .   | subject     | from | date |
+  |_  mails      |     | o @ | subject     | from | ...  |
+  |_             |     '     '             '      '      '
+  |_             |       | |
+  |_             |       | `--- attachment flag
+  |______________|       |
+  | [new] [sync] |       `----- read/unread mark
+  `--------------'
+
+Compose mail
+
+  .-------------------.
+  | [To] |___________|| -> if you click in To you get the gpcmd -a
+  | Subject |________||
+  |-------------------|    NOTES: Missing CC field?
+  | Attachments ..    |
+  |-------------------|
+  |                   |
+  |  body             |
+  |                   |
+  |                   |
+  |___________________|
+  |   [cancel] [send] |
+  `-------------------'
