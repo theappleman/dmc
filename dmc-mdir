@@ -9,7 +9,7 @@ if [ -z "${MD}" ]; then
   exit 1
 fi
 
-function mdir_ls {
+mdir_ls () {
   echo "cur $(ls $1/cur | wc -l)" > /dev/stderr
   echo "new $(ls $1/new | wc -l)" > /dev/stderr
   echo "tmp $(ls $1/tmp | wc -l)" > /dev/stderr

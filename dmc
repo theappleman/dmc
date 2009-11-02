@@ -12,7 +12,7 @@ mkdir -p ~/.dmc/tmp
 mkdir -p ~/.dmc/acc
 [ -e ~/.dmc/acc.default ] && . ~/.dmc/acc.default
 
-function acc_daemon {
+acc_daemon () {
   LOCK=~/.dmc/tmp/${NAME}.lock
   INPUT=~/.dmc/tmp/${NAME}.input
   OUTPUT=~/.dmc/tmp/${NAME}.output
@@ -28,13 +28,13 @@ function acc_daemon {
   rm -f "${LOCK}" "${INPUT}" "${OUTPUT}"
 }
 
-function dmc_cmd {
+dmc_cmd () {
   echo "$@" > ~/.dmc/tmp/${NAME}.input
   head -n 1 ~/.dmc/tmp/${NAME}.lock > /dev/stderr
   cat ~/.dmc/tmp/${NAME}.output
 }
 
-function start_account_daemons {
+start_account_daemons () {
   i=0
   for a in ~/.dmc/acc/* ; do
     ( . $a ; acc_daemon ) &
@@ -47,7 +47,7 @@ function start_account_daemons {
   fi
 }
 
-function print_account_template {
+print_account_template () {
   echo "NAME='test'"
   echo "SSL=0"
   echo "LIMIT=50 # get only 50 mails for each folder"
@@ -61,7 +61,7 @@ function print_account_template {
   echo "PASS='password'"
 }
 
-function edit_message {
+edit_message () {
   OUTDIR=~/.dmc/box/${NAME}/out
   mkdir -p ${OUTDIR}
   OUT="`mktemp ${OUTDIR}/mail.XXXXXX`"
@@ -89,7 +89,7 @@ function edit_message {
   fi
 }
 
-function add_attachment {
+add_attachment () {
   OUT="`readlink ~/.dmc/mail.last`"
   if [ -z "${OUT}" ]; then
     echo "No ~/.dmc/mail.last found. 'dmc -m' or manual symlink required."
@@ -104,7 +104,7 @@ function add_attachment {
   fi
 }
 
-function send_message {
+send_message () {
   FILE=$1
   if [ ! -e "${FILE}" ]; then
     echo "Cannot find '${FILE}'"
@@ -128,7 +128,7 @@ function send_message {
   return 0
 }
 
-function pull_mails {
+pull_mails () {
   echo "Pulling mails from account '${NAME}'"
   # This is pop3-only
   i=1
@@ -147,7 +147,7 @@ function pull_mails {
   done
 }
 
-function ign { : ; }
+ign () { : ; }
 
 case "$1" in
 "start")

@@ -14,7 +14,7 @@ if [ ! -d "${DMCTAG_ROOT}" ]; then
 fi
 cd ${DMCTAG_ROOT}
 
-function set_file {
+set_file () {
 	FILE=$1
 	if [ -e "${OLDPWD}/${FILE}" ]; then
 		if [ ! "`echo ${FILE} | cut -c 1`" = / ]; then
@@ -30,7 +30,7 @@ function set_file {
 
 # untag this file . this is highly suboptimal. in C will be much faster
 # XXX: Only used with $FILE.. set_file is required
-function untag {
+untag () {
 	for TAG in `$0 -l` ; do
 		grep -v $1 $TAG > $TAG.tmp
 		mv $TAG.tmp $TAG

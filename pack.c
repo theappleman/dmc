@@ -69,7 +69,7 @@ void mime_pack(char **files, int nfiles) {
         memset(bd,'\0',1024);
         for(in=out=0;in<len;in+=3,out+=4)
           b64_encode((unsigned char*)b+in,bd+out,len-in>3?3:len-in);
-        puts (bd);
+        puts ((char *)bd);
       }
     }
     fclose (fd);
