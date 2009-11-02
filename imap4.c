@@ -198,7 +198,7 @@ int main (int argc, char **argv) {
 			waitreply ();
 			dir = strdup ("");
 			while (doword (getword ()));
-		} else fprintf (stderr, "Cannot connect to %s %d\n", argv[1], atoi (argv[2]));
-	} else fprintf(stderr, "Usage: dmc-imap4 host port 2> body > fifo < input\n");
+		} else printf ("Cannot connect to %s %d\n", argv[1], atoi (argv[2]));
+	} else printf ("Usage: dmc-imap4 host port 2> body > fifo < input\n");
 	return ret;
 }

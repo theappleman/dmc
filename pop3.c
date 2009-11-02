@@ -39,7 +39,7 @@ static int waitreply (int res) {
 			if (!ch)
 				ch = strchr (str, '\n');
 			if (ch) {
-				reply = (word[0] == '+')
+				reply = (word[0] == '+');
 				*ch = 0;
 				snprintf (result, 1023, "### %s %d \"%s\"\n", cmd, reply, str);
 				str = ch+((ch[1]=='\n')?2:1);
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
 			atexit (sock_close);
 			waitreply (1);
 			while (doword (getword ()));
-		} else fprintf (stderr, "Cannot connect to %s %d\n", argv[1], atoi(argv[2]));
-	} else fprintf (stderr, "Usage: dmc-pop3 host port [ssl] 2> body > fifo < input\n");
+		} else printf ("Cannot connect to %s %d\n", argv[1], atoi(argv[2]));
+	} else printf ("Usage: dmc-pop3 host port [ssl] 2> body > fifo < input\n");
 	return 0;
 }
