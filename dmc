@@ -37,8 +37,9 @@ function dmc_cmd {
 function start_account_daemons {
   i=0
   for a in ~/.dmc/acc/* ; do
-    ( source $a ; acc_daemon ) &
+    ( . $a ; acc_daemon ) &
     i=$(($i+1))
+    sleep 1
   done
   if [ "$i" = 0 ]; then
     echo "No accounts defined in ~/.dmc/acc"
@@ -133,12 +134,14 @@ function pull_mails {
   i=1
   while [ ! "$LIMIT" = "$i" ] ; do
     dmc -c cat $i > ~/.dmc/box/${NAME}/in/$i.eml 2> ~/.dmc/tmp/${NAME}.tmp
-    if [ -n "`cat ~/.dmc/tmp/${NAME}.tmp | grep ERR`" ]; then
-      rm ~/.dmc/box/${NAME}/in/$i.eml
+    if [ -n "`cat ~/.dmc/tmp/${NAME}.tmp | grep 'cat 0'`" ]; then
+      rm -f ~/.dmc/box/${NAME}/in/$i.eml
+      echo "EOF $i"
+      cat ~/.dmc/tmp/${NAME}.tmp
       break
     else
       size=`du -hs ~/.dmc/box/${NAME}/in/$i.eml | awk '{print \$1}'`
-      echo "got $i $size"
+      echo "got $i $size $(cat ~/.dmc/tmp/${NAME}.tmp)"
     fi
     i=$(($i+1))
   done
@@ -149,7 +152,6 @@ function ign { : ; }
 case "$1" in
 "start")
   start_account_daemons
-  sleep 1
   ;;
 "stop")
   cd ~/.dmc/tmp
@@ -220,9 +222,7 @@ case "$1" in
       printf "> "
       read A
       dmc_cmd "$A"
-      if [ "$A" = "exit" ]; then
-        exit 0
-      fi
+      [ "$A" = "exit" ] && exit 0
     done
   else
     shift

@@ -61,6 +61,7 @@ static int waitreply() {
   char result[256];
 
   ftruncate (2, 0);
+  lseek (2, 0, SEEK_SET);
   word[0] = result[0] = '\0';
   while(lock || sock_ready()) {
     lock = 0;
