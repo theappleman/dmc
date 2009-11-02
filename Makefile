@@ -10,12 +10,7 @@ CFLAGS+=-DVERSION=\"${VERSION}\"
 
 BINS=dmc-mbox dmc-smtp dmc-pop3 dmc-imap4 dmc-pack dmc-filter dmc-mbox
 
-all: config.mk ${BINS}
-
-config.mk: 
-	@echo creating $@ from config.def.mk
-	cp config.def.mk config.mk
-	${MAKE} clean
+all: ${BINS}
 
 dmc-smtp: smtp.o
 	${CC} ${LDFLAGS} smtp.o -o dmc-smtp -lresolv
