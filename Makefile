@@ -8,7 +8,7 @@ endif
 CFLAGS+=-DHAVE_SSL=${HAVE_SSL}
 CFLAGS+=-DVERSION=\"${VERSION}\"
 
-BINS=dmc-mbox dmc-smtp dmc-pop3 dmc-imap4 dmc-pack dmc-mbox
+BINS=dmc-mbox dmc-smtp dmc-pop3 dmc-imap4 dmc-pack dmc-filter dmc-mbox
 
 all: config.mk ${BINS}
 
@@ -26,6 +26,9 @@ dmc-mbox: mbox.o
 dmc-pack: pack.o
 	${CC} ${LDFLAGS} pack.o -o dmc-pack
 
+dmc-filter: filter.o
+	${CC} ${LDFLAGS} filter.o -o dmc-filter
+
 dmc-pop3: pop3.o
 	${CC} ${LDFLAGS} ${SSL_LIBS} pop3.o -o dmc-pop3
 
@@ -41,6 +44,7 @@ install:
 	cp -f dmc-pop3 ${PREFIX}/bin
 	cp -f dmc-imap4 ${PREFIX}/bin
 	cp -f dmc-pack ${PREFIX}/bin
+	cp -f dmc-filter ${PREFIX}/bin
 	cp -f dmc-mbox ${PREFIX}/bin
 	cp -f dmc-mdir ${PREFIX}/bin
 
