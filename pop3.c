@@ -21,14 +21,15 @@ static char *getword () {
 	return word;
 }
 
-static int waitreply() {
+static int waitreply (int res) {
 	char result[256];
 	char *ch, *str = word;
 	int lock = 1;
 	int reply = -1;
 
+	result[0] = 0;
 	ftruncate (2, 0);
-	while (lock || sock_ready()) {
+	while (lock || sock_ready ()) {
 		lock = 0;
 		if (sock_read (word, 512) <1)
 			break;
@@ -52,9 +53,13 @@ static int waitreply() {
 			*ch = '\0';
 		write (2, str, strlen (str));
 	}
-	write (1, result, strlen (result));
-	/* stderr lseek works on pipes :D */
-	lseek (2, 0, 0);
+	write (2, "\n", 1);
+	if (res) {
+		if (result[0] == 0)
+			snprintf (result, 1023, "### %s %d \"\"\n", cmd, reply);
+		write (1, result, strlen (result));
+	}
+	lseek(1, 0, SEEK_SET);
 	return reply;
 }
 
@@ -68,33 +73,33 @@ static int doword (char *word) {
 	} else
 	if (!strcmp (word, "exit")) {
 		sock_printf ("QUIT\n");
-		waitreply ();
+		waitreply (1);
 		ret = 0;
 	} else
 	if (!strcmp (word, "help") || !strcmp (word, "?")) {
-		fprintf(stderr, "Use: ls cat head rm login exit\n");
+		printf ("Use: ls cat head rm login exit\n");
 	} else
 	if (!strcmp(word, "ls")) {
-		sock_printf("LIST\n");
-		waitreply();
+		sock_printf ("LIST\n");
+		waitreply (1);
 	} else
 	if (!strcmp(word, "cat")) {
 		sock_printf ("RETR %d\n", atoi(getword()));
-		waitreply ();
+		waitreply (1);
 	} else
 	if (!strcmp(word, "head")) {
 		sock_printf ("TOP %d 50\n", atoi(getword()));
-		waitreply ();
+		waitreply (1);
 	} else
 	if (!strcmp(word, "rm")) {
 		sock_printf ("DELE %d\n", atoi(getword()));
-		waitreply ();
+		waitreply (1);
 	} else
 	if (!strcmp(word, "login")) {
 		sock_printf ("USER %s\n", getword());
-		waitreply (); // TODO: if user fail, do not send pass
+		waitreply (0); // TODO: if user fail, do not send pass
 		sock_printf ("PASS %s\n", getword());
-		waitreply ();
+		waitreply (1);
 	} else sock_printf ("NOOP\n");
 	return ret;
 }
@@ -107,7 +112,7 @@ int main(int argc, char **argv) {
 		if (sock_connect (argv[1], atoi (argv[2]), ssl) >= 0) {
 			ret = 0;
 			atexit (sock_close);
-			waitreply ();
+			waitreply (1);
 			while (doword (getword ()));
 		} else fprintf (stderr, "Cannot connect to %s %d\n", argv[1], atoi(argv[2]));
 	} else fprintf (stderr, "Usage: dmc-pop3 host port [ssl] 2> body > fifo < input\n");

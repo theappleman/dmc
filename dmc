@@ -17,11 +17,12 @@ function acc_daemon {
   INPUT=~/.dmc/tmp/${NAME}.input
   OUTPUT=~/.dmc/tmp/${NAME}.output
 
-  echo "Starting $NAME account daemon..."
+  echo "Starting $NAME account $PROTOCOL daemon..."
 
   rm -f "${LOCK}" "${INPUT}" "${OUTPUT}"
   mkfifo "${LOCK}" "${INPUT}"
-  (sleep 2 ; echo login ${USER} ${PASS} > ${INPUT} ) &
+
+  ( head -n 1 ${LOCK} ; dmc_cmd "login ${USER} ${PASS}" ) &
   (while : ; do cat ${INPUT} 2> /dev/null ; done) | \
     dmc-${PROTOCOL} ${HOST} ${PORT} ${SSL} 2> ${OUTPUT} > ${LOCK}
   rm -f "${LOCK}" "${INPUT}" "${OUTPUT}"
@@ -143,21 +144,27 @@ function pull_mails {
   done
 }
 
+function ign { : ; }
+
 case "$1" in
 "start")
   start_account_daemons
   sleep 1
   ;;
 "stop")
-  for a in ~/.dmc/tmp/*.input ; do
-    echo $a
-    echo exit > $a
+  cd ~/.dmc/tmp
+  for a in *.input ; do
+    [ "$a" = "*.input" ] && break # XXX ugly hack
+    file=`echo $a|cut -d '.' -f 1`
+    echo Stopping $file daemon
+    echo exit > $a &
+    sleep 1
     rm -f ~/.dmc/tmp/$a
   done
-  sleep 1
-  rm -f ~/.dmc/tmp/*
-  pkill dmc
+  rm -f ~/.dmc/tmp/* 2> /dev/null
   pkill cat
+  trap ign TERM
+  pkill -TERM dmc
   ;;
 "push")
   for a in ~/.dmc/acc/* ; do
@@ -213,6 +220,9 @@ case "$1" in
       printf "> "
       read A
       dmc_cmd "$A"
+      if [ "$A" = "exit" ]; then
+        exit 0
+      fi
     done
   else
     shift

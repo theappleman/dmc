@@ -4,6 +4,7 @@ ifeq ($(HAVE_SSL),1)
 SSL_LIBS=`pkg-config libssl --libs`
 CFLAGS+=`pkg-config libssl --cflags`
 endif
+
 CFLAGS+=-DHAVE_SSL=${HAVE_SSL}
 CFLAGS+=-DVERSION=\"${VERSION}\"
 
@@ -20,16 +21,16 @@ dmc-smtp: smtp.o
 	${CC} ${LDFLAGS} smtp.o -o dmc-smtp -lresolv
 
 dmc-mbox: mbox.o
-	${CC} ${LDFLAGS} ${SSL_LIBS} mbox.o -o dmc-mbox
+	${CC} ${LDFLAGS} mbox.o -o dmc-mbox
+
+dmc-pack: pack.o
+	${CC} ${LDFLAGS} pack.o -o dmc-pack
 
 dmc-pop3: pop3.o
 	${CC} ${LDFLAGS} ${SSL_LIBS} pop3.o -o dmc-pop3
 
 dmc-imap4: imap4.o
 	${CC} ${LDFLAGS} ${SSL_LIBS} imap4.o -o dmc-imap4
-
-dmc-pack: pack.o
-	${CC} ${LDFLAGS} pack.o -o dmc-pack
 
 install:
 	chmod +x dmc dmc-tag dmc-mdir

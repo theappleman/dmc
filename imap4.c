@@ -72,19 +72,28 @@ static int waitreply() {
         if (!memcmp (ptr+1, "OK", 2))
           reply = 1;
         else
+        if (!memcmp (ptr+1, "FETCH", 5))
+          reply = 1;
+        else
         if (!memcmp (ptr+1, "NO", 2))
           reply = 0;
         else // TODO: Do 'BAD' should be -1 ?
         if (!memcmp (ptr+1, "BAD", 3))
           reply = 0;
-        strcpy (word, ptr);
+        else
+          reply = -1;
+      } else reply = -1;
+
+      ptr = strchr (word, '\r');
+      if (!ptr)
+        ptr = strchr (word, '\n');
+      if (ptr) {
+        *ptr = '\0';
+        snprintf (result, 254, "### %s %d \"%s\"\n", cmd, reply, word);
+        *ptr = '\n';
+        if (reply != -1)
+          strcpy (word, ptr+1);
       }
-      ptr = strchr(word, '\n');
-      if (ptr)
-        *ptr=0;
-      snprintf (result, 254, "### %s %d \"%s\"\n", cmd, reply, word);
-      if (ptr)
-        *ptr='\n';
     }
     write (2, word, strlen (word));
   }
