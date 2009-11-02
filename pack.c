@@ -5,7 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 
-/* XXX: here? */
 static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char cd64[]="|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
 
@@ -45,7 +44,7 @@ void mime_pack(char **files, int nfiles) {
           "Content-Type: text/plain\n");
       header = 0;
     }
-    printf ("%s", b);
+    fputs (b, stdout);
   }
   for(i = 0; i < nfiles; i++) {
     snprintf (cmd, 1023, "file -i \"%s\"", files[i]);
@@ -57,26 +56,25 @@ void mime_pack(char **files, int nfiles) {
       continue;
     if (!(fd=fopen(files[i], "r")))
       continue;
-    printf( "--dmc-multipart\n");
-    printf( "Content-Type: %s", ptr+1);
-    printf( "Content-Disposition: attachment;"
-        "filename=\"%s\"\n", files[i]);
-    if (strstr(ptr, "text")) {
+    puts ("--dmc-multipart");
+    printf ("Content-Type: %s\n", ptr+1);
+    printf ("Content-Disposition: attachment; filename=\"%s\"\n", files[i]);
+    if (strstr (ptr, "text")) {
       printf("Content-Transfer-Encoding: quoted-printable\n\n");
-      while(fgets(b, 1023, fd))
+      while (fgets(b, 1023, fd))
         printf("%s", b);
     } else {
-      printf("Content-Transfer-Encoding: base64\n\n");
-      while((len=fread(b, 1, 57, fd))) {
+      puts ("Content-Transfer-Encoding: base64\n");
+      while ((len=fread(b, 1, 57, fd))) {
         memset(bd,'\0',1024);
         for(in=out=0;in<len;in+=3,out+=4)
           b64_encode((unsigned char*)b+in,bd+out,len-in>3?3:len-in);
-        printf("%s\n", bd);
+        puts (bd);
       }
     }
-    fclose(fd);
+    fclose (fd);
   }
-  printf("--dmc-multipart--\n");
+  puts ("--dmc-multipart--");
 }
 
 void mime_unpack (int xtr) {
@@ -120,7 +118,7 @@ void mime_unpack (int xtr) {
             dump = 0;
         } else {
           if (!dump && filename[0])
-            printf("%s\n", filename);
+            puts (filename);
         }
       } 
     } else boundary[0] = '\0';
@@ -142,10 +140,9 @@ void mime_unpack (int xtr) {
   }
 }
 
-/* TODO: Implement dmc-pack -l to only list filenames attached to the mail */
 int main(int argc, char **argv) {
   if (argc < 2 || !strcmp(argv[1], "-h"))
-    printf("usage: %s [-hlu | attachment1 attachment2...] < mail\n", argv[0]);
+    fprintf (stderr, "Usage: %s [-hlu | attachment1 attachment2...] < mail\n", argv[0]);
   else if (!strcmp(argv[1], "-l"))
     mime_unpack (0);
   else if (!strcmp(argv[1], "-u"))
