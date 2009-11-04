@@ -79,7 +79,7 @@ void mime_pack(char **files, int nfiles) {
 
 void mime_unpack (int xtr) {
 	FILE *fd = NULL;
-	char b[1024], boundary[1024], encoding[1024], filename[1024], *ptr = NULL;
+	char b[1024], boundary[1024], encoding[1024], filename[1024], *ptr, *ptr2;
 	unsigned char bd[1024];
 	int entity = 0, dump = 0, len, in, out, i;
 
@@ -89,8 +89,7 @@ void mime_unpack (int xtr) {
 		if (!memcmp(b, "--", 2)) {
 			if (boundary[0] && strstr(b, boundary) &&
 					!memcmp(b+strlen(b)-3, "--", 2)) {
-				entity = 0;
-				dump = 0;
+				entity = dump = 0;
 			} else {
 				strncpy(boundary, b+2, 1023);
 				if ((len = strlen(boundary)) > 0)
@@ -104,22 +103,20 @@ void mime_unpack (int xtr) {
 		if (entity) {
 			if ((ptr = strstr(b, "Content-Transfer-Encoding:"))) {
 				strncpy(encoding, ptr+26, 1023);
-			} else if ((ptr = strstr(b, "filename="))) {
-				strncpy(filename, ptr+10, 1023);
-				if ((len=strlen(filename)) > 1)
-					filename[len-2] = '\0';
+			} else if ((ptr = strstr(b, "filename=")) && 
+					((ptr2 = strchr(ptr, '"')) || (ptr2 = strchr(ptr, '=')))) {
+				strncpy(filename, ptr2+1, 1023);
+				if ((ptr = strchr(filename, '"')) ||
+					(ptr = strchr(filename, ' ')) ||
+					(ptr = strchr(filename, '\n')))
+					ptr[0] = '\0';
+				puts (filename);
 			} else if (b[0] == '\n') {
-				if (xtr) {
-					if (!dump && filename[0] && (fd = fopen(filename, "w"))) {
-						printf("%s\n", filename);
-						dump = 1;
-						continue;
-					} else if (dump && strstr(encoding, "base64"))
-						dump = 0;
-				} else {
-					if (!dump && filename[0])
-						puts (filename);
-				}
+				if (xtr && !dump && filename[0] && (fd = fopen(filename, "w"))) {
+					dump = 1;
+					continue;
+				} else if (dump && strstr(encoding, "base64"))
+					dump = 0;
 			} 
 		} else boundary[0] = '\0';
 		if (dump) {
@@ -141,8 +138,10 @@ void mime_unpack (int xtr) {
 }
 
 int main(int argc, char **argv) {
-	if (argc < 2 || !strcmp(argv[1], "-h"))
-		printf ("Usage: %s [-hlu | attachment1 attachment2...] < mail\n", argv[0]);
+	if (argc < 2 || !strcmp(argv[1], "-h")) {
+		fprintf (stderr, "Usage: %s [-hlu | attachment1 attachment2...] < mail\n", argv[0]);
+		return 1;
+	}
 	else if (!strcmp(argv[1], "-l"))
 		mime_unpack (0);
 	else if (!strcmp(argv[1], "-u"))

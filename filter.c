@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
 
 	for (i = 0; i < argc; i++)
 		if (!strcmp (argv[i], "-h")) {
-			fprintf (stderr, "Usage: %s [-h] [headers | :] [-e] [new headers]\n", argv[0]);
+			fprintf (stderr, "Usage: %s [-h] [headers | :] [-e] [new headers] < mail\n", argv[0]);
 			return 1;
 		} else if (!strcmp (argv[i], "-e"))
 			edit = i;
