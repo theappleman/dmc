@@ -20,91 +20,91 @@ static int fd = -1;
 
 int sock_ssl (int enable) {
 #if HAVE_SSL
-  int err;
-  if (ssl) {
-    // challenge, check cert, etc..
-    sfd = SSL_new (ctx);
-    SSL_set_fd (sfd, fd);
-    err = SSL_connect (sfd);
-    /* TODO: check cert */
-    SSL_set_accept_state (sfd);
-  }
-  ssl = enable;
-  return 1;
+	int err;
+	if (ssl) {
+		// challenge, check cert, etc..
+		sfd = SSL_new (ctx);
+		SSL_set_fd (sfd, fd);
+		err = SSL_connect (sfd);
+		/* TODO: check cert */
+		SSL_set_accept_state (sfd);
+	}
+	ssl = enable;
+	return 1;
 #else
-  return 0;
+	return 0;
 #endif
 }
 
 // TODO: cleanup all those fd=-1
-int sock_connect (const char *host, int port, int ssl) {
-  struct sockaddr_in sa;
-  struct hostent *he;
-  int s = socket (AF_INET, SOCK_STREAM, 0);
-  sock_ssl (ssl);
-  fd = -1;
-  if (s != -1) {
-    fd = s;
-    memset (&sa, 0, sizeof (sa));
-    sa.sin_family = AF_INET;
-    he = (struct hostent *)gethostbyname (host);
-    if (he != (struct hostent*)0) {
-      sa.sin_addr = *((struct in_addr *)he->h_addr);
-      sa.sin_port = htons (port);
-      if (connect (fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr)))
-        fd = -1;
-    } else fd = -1;
-    if (fd == -1)
-      close (s);
-  } else fd = -1;
-  return fd;
+int sock_connect(const char *host, int port, int ssl) {
+	struct sockaddr_in sa;
+	struct hostent *he;
+	int s = socket (AF_INET, SOCK_STREAM, 0);
+	sock_ssl (ssl);
+	fd = -1;
+	if (s != -1) {
+		fd = s;
+		memset (&sa, 0, sizeof (sa));
+		sa.sin_family = AF_INET;
+		he = (struct hostent *)gethostbyname (host);
+		if (he != (struct hostent*)0) {
+			sa.sin_addr = *((struct in_addr *)he->h_addr);
+			sa.sin_port = htons (port);
+			if (connect (fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr)))
+				fd = -1;
+		} else fd = -1;
+		if (fd == -1)
+			close (s);
+	} else fd = -1;
+	return fd;
 }
 
 static int sock_ready() {
-  struct pollfd fds[1];
-  fds[0].fd = fd;
-  fds[0].events = POLLIN|POLLPRI;
-  fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
-  return poll((struct pollfd *)&fds, 1, 10);
+	struct pollfd fds[1];
+	fds[0].fd = fd;
+	fds[0].events = POLLIN|POLLPRI;
+	fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
+	return poll((struct pollfd *)&fds, 1, 10);
 }
 
-void sock_close () {
+void sock_close() {
 #if HAVE_SSL
-  SSL_free (sfd);
+	SSL_free (sfd);
 #endif
-  close (fd);
+	close (fd);
 }
 
-int sock_write (const char *str) {
+int sock_write(const char *str) {
 #if HAVE_SSL
-  if (ssl)
-    return SSL_write (sfd, str, strlen(str));
-  else
+	if (ssl)
+		return SSL_write (sfd, str, strlen(str));
+	else
 #endif
-  return write (fd, str, strlen(str));
+	return write (fd, str, strlen(str));
 }
 
-int sock_printf (const char *fmt, ...) {
-  va_list ap;
-  int ret = -1;
-  char buf[1024];
-  va_start (ap, fmt);
-  vsnprintf (buf, 1023, fmt, ap);
-  // XXX check len
-  ret = sock_write (buf);
-  va_end (ap);
-  return ret;
+int sock_printf(const char *fmt, ...) {
+	va_list ap;
+	int ret = -1;
+	char buf[1024];
+	va_start (ap, fmt);
+	vsnprintf (buf, 1023, fmt, ap);
+	// XXX check len
+	ret = sock_write (buf);
+	va_end (ap);
+	return ret;
 }
 
 int sock_read (char *buf, int len) {
-  int ret;
+	int ret;
 #if HAVE_SSL
-  if (ssl)
-    ret = SSL_read (sfd, buf, len);
-  else
+	if (ssl)
+		ret = SSL_read (sfd, buf, len);
+	else
 #endif
-    ret = read (fd, buf, len);
-  if (ret>0)
-    buf[ret] = '\0';
-  return ret;
+		ret = read (fd, buf, len);
+	if (ret>0)
+		buf[ret] = '\0';
+	return ret;
 }

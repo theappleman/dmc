@@ -107,8 +107,7 @@ int main(int argc, char **argv) {
 		if (argc>3)
 			ssl = (*argv[3]=='1');
 		if (sock_connect (argv[1], atoi (argv[2]), ssl) >= 0) {
-			ret = 0;
-			atexit (sock_close);
+			ret = atexit (sock_close);
 			waitreply (1);
 			while (doword (getword ()));
 		} else printf ("Cannot connect to %s %d\n", argv[1], atoi(argv[2]));

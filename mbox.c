@@ -8,13 +8,14 @@
 FILE *fd;
 static char word[1024];
 
-static void mbox_ls () {
+// XXX maybe so many [1024] stuff. can this cause truncated mails?
+static void mbox_ls() {
 	char b[1024], from[1024], subject[1024], date[1024], *ptr;
 	int m = 0, headers = 1;
 
 	b[1023] = '\0';
 	fseek (fd, 0, SEEK_SET);
-	while(fgets (b, 1023, fd)) {
+	while (fgets (b, 1023, fd)) {
 		if (b[0]=='\n') {
 			if (headers) {
 				printf ("%i  %s  %s  %s\n", m++, from, date, subject);
@@ -48,23 +49,21 @@ static void mbox_ls () {
 	}
 }
 
-static void mbox_cat (int idx, int body) {
+static void mbox_cat(int idx, int body) {
 	char b[1024];
 	int m = 0, headers = 1;
 
 	b[1023] = '\0';
 	fseek (fd, 0, SEEK_SET);
-	while(fgets (b, 1023, fd)) {
+	while (fgets (b, 1023, fd)) {
 		if (b[0]=='\n') {
-			if (headers)
-				headers = 0;
-			else {
+			if (!headers) {
 				fgets (b, 1023, fd);
 				if (!memcmp (b, "From ", 5)) {
 					headers = 1;
 					m++;
 				}
-			}
+			} else headers = 0;
 		}
 		if (m == idx && (headers || body))
 			fputs (b, stdout);
@@ -76,36 +75,34 @@ static void mbox_rm (int idx) {
 	int m = 0, i = 0, headers = 1, size;
 
 	fseek(fd, 0, SEEK_END);
-	size = ftell(fd);
+	size = ftell (fd);
 	if (!(buf = malloc (size)))
 		return;
 	b[1023] = '\0';
 	fseek (fd, 0, SEEK_SET);
-	while(fgets (b, 1023, fd)) {
+	while (fgets (b, 1023, fd)) {
 		if (b[0]=='\n') {
-			if (headers)
-				headers = 0;
-			else {
+			if (!headers) {
 				fgets (b, 1023, fd);
 				if (!memcmp (b, "From ", 5)) {
 					headers = 1;
 					if (++m == idx) {
-						strcpy(buf + i, "\n");
+						strcpy (buf + i, "\n");
 						i += 1;
 					}
 				}
-			}
+			} else headers = 0;
 		}
 		if (m != idx) {
-			strcpy(buf + i, b);
-			i += strlen(b);
+			strcpy (buf + i, b);
+			i += strlen (b);
 		}
 	}
 	fseek (fd, 0, SEEK_SET);
 	fwrite (buf, 1, i, fd);
 	fflush (fd);
-	ftruncate (fileno(fd), i);
-	free(buf);
+	ftruncate (fileno (fd), i);
+	free (buf);
 }
 
 static char *getword () {
@@ -146,10 +143,9 @@ int main (int argc, char **argv) {
 	if (argc>1) {
 		fd = fopen (argv[1], "r+");
 		if (fd != NULL) {
-			ret = 0;
 			while (doword (getword ()));
-			fclose (fd);
-		} else fprintf (stderr, "Cannot open %s\n", argv[1]);
-	} else fprintf (stderr, "Usage: dmc-mbox [mbox-file] 2> body > fifo < input\n");
+			ret = fclose (fd);
+		} else printf ("Cannot open %s\n", argv[1]);
+	} else printf ("Usage: dmc-mbox [mbox-file] 2> body > fifo < input\n");
 	return ret;
 }

@@ -10,12 +10,12 @@ int main(int argc, char **argv) {
 
 	for (i = 0; i < argc; i++)
 		if (!strcmp (argv[i], "-h")) {
-			fprintf (stderr, "Usage: %s [-h] [headers | :] [-e] [new headers] < mail\n", argv[0]);
+			printf ("Usage: %s [-h] [headers | :] [-e] [new headers] < mail\n", argv[0]);
 			return 1;
 		} else if (!strcmp (argv[i], "-e"))
 			edit = i;
 	for (i = 0; i < argc; i++) {
-		strncpy(argv2[i], argv[i], 1023);
+		strncpy (argv2[i], argv[i], 1023);
 		argv2[i][1023] = '\0';
 	}
 	memset (b, '\0', 1024);

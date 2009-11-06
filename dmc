@@ -1,6 +1,7 @@
 #!/bin/sh
-# dmc - dynamic mail client
-# Copyleft 2009 -- pancake <at> nopcode <dot> org
+# See LICENSE file for copyright and license details.
+#---
+# dmc - dynamic mail client - pancake <at> nopcode <dot> org
 
 VERSION="0.1"
 COPYRIGHT="Copyleft -- pancake@nopcode.org"
@@ -41,7 +42,7 @@ start_account_daemons () {
 		i=$(($i+1))
 		sleep 1
 	done
-	if [ "$i" = 0 ]; then
+	if [ $i = 0 ]; then
 		echo "No accounts defined in ~/.dmc/acc"
 		exit 1
 	fi
@@ -56,6 +57,7 @@ print_account_template () {
 	echo "PORT=110"
 	echo "#SEND=acc-name"
 	echo "SEND=!msmtp"
+	echo "ONLINE=0"
 	echo "MAIL=username@domain"
 	echo "USER='username'"
 	echo "PASS='password'"
@@ -171,20 +173,18 @@ case "$1" in
 "push")
 	for a in ~/.dmc/acc/* ; do
 		. $a
-		if [ -d ~/.dmc/box/${NAME}/out ]; then
-			for b in ~/.dmc/box/${NAME}/out/* ; do
-				if [ -f "$b" ]; then
-					send_message "$b"
-					if [ $? = 0 ]; then
-						echo "Mail sent. local copy moved to ~/.dmc/box/${NAME}/sent"
-						mkdir -p ~/.dmc/box/${NAME}/sent
-						mv $b ~/.dmc/box/${NAME}/sent
-					else
-						echo "There was an error while sending the mail"
-					fi
-				fi
-			done
-		fi
+		[ ! -d ~/.dmc/box/${NAME}/out ] && continue
+		for b in ~/.dmc/box/${NAME}/out/* ; do
+			[ ! -f "$b" ] && continue
+			send_message "$b"
+			if [ $? = 0 ]; then
+				echo "Mail sent. local copy moved to ~/.dmc/box/${NAME}/sent"
+				mkdir -p ~/.dmc/box/${NAME}/sent
+				mv $b ~/.dmc/box/${NAME}/sent
+			else
+				echo "There was an error sending the mail"
+			fi
+		done
 	done
 	;;
 "pull")
