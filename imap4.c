@@ -14,11 +14,10 @@
 static char *cmd = NULL;
 static char word[4096];
 static int ctr = 1;
+static int catmode = 0;
 static char *dir;
 
-/* TODO: make getword() ready() and cleanup() shared between smtp,pop,imap? */
-
-/* XXX full of bugs and ugly code */
+/* TODO clean this ugly code */
 static char *getword() {
 	char *p = NULL;
 	char *str = word;
@@ -58,13 +57,14 @@ static int waitreply() {
 	int lock = 1;
 	int line = 0;
 	int reply = -1;
-	char result[256];
+	char result[1024];
 
 	ftruncate (2, 0);
 	lseek (2, 0, SEEK_SET);
 	word[0] = result[0] = '\0';
 	while(lock || sock_ready ()) {
 		lock = 0;
+		memset (word, 0, 4096);
 		if (sock_read (word, 4095) <1)
 			break;
 		if (line++ == 0) {
@@ -81,25 +81,39 @@ static int waitreply() {
 				else // TODO: Do 'BAD' should be -1 ?
 				if (!memcmp (ptr+1, "BAD", 3))
 					reply = 0;
-				else
-					reply = -1;
+				else reply = -1;
 			} else reply = -1;
 
-			ptr = strchr (word, '\r');
+			ptr = strstr (word, "\r\n");
 			if (!ptr)
 				ptr = strchr (word, '\n');
 			if (ptr) {
+				char oldptr = *ptr;
 				*ptr = '\0';
-				snprintf (result, 254, "### %s %d \"%s\"\n", cmd, reply, word);
-				*ptr = '\n';
-				if (reply != -1)
-					strcpy (word, ptr+1);
+				snprintf (result, 1023, "### %s %d \"%s\"\n", cmd, reply, word);
+				*ptr = oldptr;
+				if (catmode) {
+					if (oldptr=='\r')
+						strcpy (word, ptr+2);
+					else strcpy (word, ptr+1);
+					if (reply != 0)
+						lock = 1;
+				}
 			}
+		} else if (catmode) {
+			ptr = strstr (word, "\r\n)");
+			if (ptr == NULL)
+				ptr = strstr (word, "\n)");
+			if (ptr) {
+				ptr[0] = '\n';
+				ptr[1] = 0;
+				lock = 0;
+			} else lock = 1;
 		}
 		write (2, word, strlen (word));
 	}
 
-	write (1, result, strlen(result));
+	write (1, result, strlen (result));
 	return reply;
 }
 
@@ -114,6 +128,7 @@ RECENT - show the number of recent messages
 #endif
 static int doword(char *word) {
 	int ret = 1;
+	catmode = 0;
 	free (cmd);
 	cmd = strdup (word);
 	if (*word == '\0') {
@@ -147,11 +162,13 @@ static int doword(char *word) {
 		waitreply ();
 	} else
 	if (!strcmp (word, "cat")) {
+		catmode = 1;
 		sock_printf ("%d FETCH %d body[]\n",
 			ctr++, atoi (getword ()));
 		waitreply ();
 	} else
 	if (!strcmp (word, "head")) {
+		catmode = 1;
 		sock_printf ("%d FETCH %d body[header]\n",
 			ctr++, atoi (getword ()));
 		waitreply ();

@@ -23,13 +23,15 @@ acc_daemon () {
 	rm -f "${LOCK}" "${INPUT}" "${OUTPUT}"
 	mkfifo "${LOCK}" "${INPUT}"
 
-	( head -n 1 ${LOCK} ; dmc_cmd "login ${USER} ${PASS}" ) &
+	# wait 1 connect message and 1 login message
+	( head -n 2 ${LOCK} ; dmc_cmd "login ${USER} ${PASS}" ) &
 	(while : ; do cat ${INPUT} 2> /dev/null ; done) | \
 		dmc-${PROTOCOL} ${HOST} ${PORT} ${SSL} 2> ${OUTPUT} > ${LOCK}
 	rm -f "${LOCK}" "${INPUT}" "${OUTPUT}"
 }
 
 dmc_cmd () {
+	[ -z "$1" ] && return
 	echo "$@" > ~/.dmc/tmp/${NAME}.input
 	head -n 1 ~/.dmc/tmp/${NAME}.lock > /dev/stderr
 	cat ~/.dmc/tmp/${NAME}.output
@@ -219,11 +221,10 @@ case "$1" in
 	;;
 "-c"|"--cmd")
 	if [ -z "$2" ]; then
-		while : ; do
+		while [ ! "$A" = "exit" ] ; do
 			printf "> "
 			read A
 			dmc_cmd "$A"
-			[ "$A" = "exit" ] && exit 0
 		done
 	else
 		shift

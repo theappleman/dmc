@@ -102,6 +102,7 @@ int sock_printf(const char *fmt, ...) {
 
 int sock_read (char *buf, int len) {
 	int ret;
+	memset (buf, 0, len+1);
 #if HAVE_SSL
 	if (ssl)
 		ret = SSL_read (sfd, buf, len);
