@@ -101,7 +101,7 @@ add_attachment () {
 			FILE="`basename \"$1\"`"
 			ln -fs "$1" "${OUT}.d/${FILE}"
 		else
-			echo "Cannot find \⅛$1\""
+			echo "Cannot find \"$1\""
 		fi
 	fi
 }
@@ -114,6 +114,7 @@ send_message () {
 	fi
 	# TODO: find better name for the auto mode
 	if [ "${SEND}" = "!msmtp" ]; then
+		# TODO: use dmc-filter here
 		TO="`dmc -H To < $FILE`"
 		SJ="`dmc -H Subject < $FILE`"
 		echo "Sending mail to $TO (${SJ})..."

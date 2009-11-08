@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <poll.h>
 #include <stdarg.h>
 #include <netdb.h>
@@ -20,17 +21,19 @@ static int fd = -1;
 
 int sock_ssl (int enable) {
 #if HAVE_SSL
-	int err;
-	if (ssl) {
-		// challenge, check cert, etc..
+	int err = 1;
+	if (enable) {
+		// TODO Check certificate
+		SSL_library_init ();
+		SSL_load_error_strings ();
+		OpenSSL_add_all_algorithms ();
+		ctx = SSL_CTX_new (SSLv23_method ());
 		sfd = SSL_new (ctx);
 		SSL_set_fd (sfd, fd);
 		err = SSL_connect (sfd);
-		/* TODO: check cert */
-		SSL_set_accept_state (sfd);
 	}
 	ssl = enable;
-	return 1;
+	return err;
 #else
 	return 0;
 #endif
@@ -41,7 +44,6 @@ int sock_connect(const char *host, int port, int ssl) {
 	struct sockaddr_in sa;
 	struct hostent *he;
 	int s = socket (AF_INET, SOCK_STREAM, 0);
-	sock_ssl (ssl);
 	fd = -1;
 	if (s != -1) {
 		fd = s;
@@ -53,6 +55,7 @@ int sock_connect(const char *host, int port, int ssl) {
 			sa.sin_port = htons (port);
 			if (connect (fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr)))
 				fd = -1;
+			else fd = sock_ssl (ssl);
 		} else fd = -1;
 		if (fd == -1)
 			close (s);
@@ -60,7 +63,7 @@ int sock_connect(const char *host, int port, int ssl) {
 	return fd;
 }
 
-static int sock_ready() {
+int sock_ready() {
 	struct pollfd fds[1];
 	fds[0].fd = fd;
 	fds[0].events = POLLIN|POLLPRI;
@@ -70,6 +73,7 @@ static int sock_ready() {
 
 void sock_close() {
 #if HAVE_SSL
+	SSL_CTX_free (ctx);
 	SSL_free (sfd);
 #endif
 	close (fd);

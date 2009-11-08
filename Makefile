@@ -24,10 +24,14 @@ dmc-pack: pack.o
 dmc-filter: filter.o
 	${CC} ${LDFLAGS} filter.o -o dmc-filter
 
-dmc-pop3: pop3.o
+sock.tmp: sock.o
+	rm -f pop3.o imap4.o
+	@:> sock.tmp
+
+dmc-pop3: sock.tmp pop3.o
 	${CC} ${LDFLAGS} ${SSL_LIBS} pop3.o -o dmc-pop3
 
-dmc-imap4: imap4.o
+dmc-imap4: sock.tmp imap4.o
 	${CC} ${LDFLAGS} ${SSL_LIBS} imap4.o -o dmc-imap4
 
 install:
