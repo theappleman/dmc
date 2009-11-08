@@ -53,7 +53,7 @@ uninstall:
 	rm -f ${PREFIX}/share/man/man1/dmc.1
 
 clean:
-	rm -f ${BINS} *.o
+	rm -f ${BINS} *.o sock.tmp
 
 dist:
 	rm -rf dmc-${VERSION}

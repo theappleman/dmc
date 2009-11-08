@@ -22,18 +22,18 @@ static char *dir;
 static char *getword() {
 	char *p = NULL;
 	char *str = word;
-	*word=0;
+	*word = 0;
 reread:
-	fscanf(stdin, "%255s", str);
-	if (feof(stdin))
+	fscanf (stdin, "%255s", str);
+	if (feof (stdin))
 		*str = '\0';
 	else {
 		if (str == word) {
 			if (*word=='"') {
-				strcpy(word, word+1);
-				p = strchr(word, '"');
+				strcpy (word, word+1);
+				p = strchr (word, '"');
 				if (!p) {
-					str = word+strlen(word);
+					str = word + strlen (word);
 					*str = ' ';
 					str++;
 					*str = 0;
@@ -41,7 +41,7 @@ reread:
 				} else *p = 0;
 			}
 		} else {
-			p = strchr(str, '"');
+			p = strchr (str, '"');
 			if (!p) {
 				*str = ' ';
 				str++;
@@ -63,7 +63,7 @@ static int waitreply() {
 	ftruncate (2, 0);
 	lseek (2, 0, SEEK_SET);
 	word[0] = result[0] = '\0';
-	while(lock || sock_ready()) {
+	while(lock || sock_ready ()) {
 		lock = 0;
 		if (sock_read (word, 4095) <1)
 			break;
@@ -112,7 +112,7 @@ CLOSE - commit the delete stuff (maybe must be done after rm)
 EXPUNGE - permanent remove of deltec
 RECENT - show the number of recent messages
 #endif
-static int doword (char *word) {
+static int doword(char *word) {
 	int ret = 1;
 	free (cmd);
 	cmd = strdup (word);
@@ -120,41 +120,41 @@ static int doword (char *word) {
 		/* Do nothing */
 	} else
 	if (!strcmp (word, "exit")) {
-		sock_printf("%d LOGOUT\n", ctr++);
-		waitreply();
+		sock_printf ("%d LOGOUT\n", ctr++);
+		waitreply ();
 		ret = 0;
 	} else
-	if (!strcmp (word, "help") || !strcmp(word, "?")) {
-		fprintf(stderr, "Use: login exit find cd pwd ls cat head rm rmdir mkdir mvdir\n");
+	if (!strcmp (word, "help") || !strcmp (word, "?")) {
+		fprintf (stderr, "Use: login exit find cd pwd ls cat head rm rmdir mkdir mvdir\n");
 	} else
 	if (!strcmp (word, "pwd")) {
-		fprintf(stderr, "%s\n", dir);
+		fprintf (stderr, "%s\n", dir);
 	} else
 	if (!strcmp (word, "cd")) {
 		free(dir);
-		dir = strdup(getword());
-		if (!strcmp(dir, "\"\""))
-			*dir=0;
+		dir = strdup (getword ());
+		if (!strcmp (dir, "\"\""))
+			*dir = 0;
 		sock_printf ("%d SELECT \"%s\"\n", ctr++, dir);
-		waitreply();
+		waitreply ();
 	} else
 	if (!strcmp (word, "find")) {
-		sock_printf ("%d SEARCH TEXT \"%s\"\n", ctr++, getword());
-		waitreply();
+		sock_printf ("%d SEARCH TEXT \"%s\"\n", ctr++, getword ());
+		waitreply ();
 	} else
 	if (!strcmp (word, "ls")) {
 		sock_printf ("%d LIST \"%s\" *\n", ctr++, dir);
-		waitreply();
+		waitreply ();
 	} else
 	if (!strcmp (word, "cat")) {
 		sock_printf ("%d FETCH %d body[]\n",
-			ctr++, atoi(getword()));
-		waitreply();
+			ctr++, atoi (getword ()));
+		waitreply ();
 	} else
 	if (!strcmp (word, "head")) {
 		sock_printf ("%d FETCH %d body[header]\n",
-			ctr++, atoi(getword()));
-		waitreply();
+			ctr++, atoi (getword ()));
+		waitreply ();
 	} else
 	if (!strcmp (word, "mvdir")) {
 		sock_printf ("%d RENAME %s %s\n",
@@ -170,7 +170,7 @@ static int doword (char *word) {
 	if (!strcmp (word, "rmdir")) {
 		printf("%d DELETE \"%s\"\n",
 			ctr++, getword ());
-		waitreply();
+		waitreply ();
 	} else
 	if (!strcmp (word, "login")) {
 		char *user = strdup (getword ());
