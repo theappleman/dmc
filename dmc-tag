@@ -16,12 +16,11 @@ cd ${DMCTAG_ROOT}
 
 set_file () {
 	FILE=$1
-	if [ -e "${OLDPWD}/${FILE}" ]; then
-		if [ ! "`echo ${FILE} | cut -c 1`" = / ]; then
-			# autocomplete relative paths
-			FILE="${OLDPWD}/${FILE}"
-		fi
-	else
+	if [ ! "`echo ${FILE} | cut -c 1`" = / ]; then
+		# autocomplete relative paths
+		FILE="${OLDPWD}/${FILE}"
+	fi
+	if [ ! -e "${FILE}" ]; then
 		echo "Cannot find ${FILE}"
 		exit 1
 	fi
