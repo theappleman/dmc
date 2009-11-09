@@ -116,9 +116,8 @@ send_message () {
 	fi
 	# TODO: find better name for the auto mode
 	if [ "${SEND}" = "!msmtp" ]; then
-		# TODO: use dmc-filter here
-		TO="`dmc -H To < $FILE`"
-		SJ="`dmc -H Subject < $FILE`"
+		TO="`dmc-filter -v To: < $FILE`"
+		SJ="`dmc-filter -v Subject: < $FILE`"
 		echo "Sending mail to $TO (${SJ})..."
 #		HOST=`dmc-smtp ${TO}`
 		msmtp "--user=${USER}" "--from=${MAIL}" $TO < ${FILE}
@@ -212,13 +211,6 @@ case "$1" in
 		ls ~/.dmc/acc | cat
 	fi
 	;;
-"-H"|"--header")
-	if [ -z "$2" ]; then
-		echo "Usage: dmc -H [header] < mail"
-	else
-		grep -e : | grep -re "^$2:" | cut -d : -f 2- | sed 's, ,,'
-	fi
-	;;
 "-c"|"--cmd")
 	if [ -z "$2" ]; then
 		while [ ! "$A" = "exit" ] ; do
@@ -269,7 +261,6 @@ case "$1" in
 	echo " -A file        add attachment to mail"
 	echo " -c cmd         run command for \$DMC_ACCOUNT or acc.default daemon"
 	echo " -m addr subj   create mail with default account"
-	echo " -H header      grep for header"
 	echo " -s file        send email"
 	echo " -v             show version"
 	echo " -h             show this help message"
