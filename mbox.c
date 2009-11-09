@@ -8,7 +8,6 @@
 FILE *fd;
 static char word[1024];
 
-// XXX maybe so many [1024] stuff. can this cause truncated mails?
 static void mbox_ls() {
 	char b[1024], from[1024], subject[1024], date[1024], *ptr;
 	int m = 0, headers = 1;

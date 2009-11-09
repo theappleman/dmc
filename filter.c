@@ -19,10 +19,10 @@ int main(int argc, char **argv) {
 		for (i = filter; i < argc; i++)
 			if (!strcmp (argv[i], "-e"))
 				edit = i;
-	}
-	for (i = 0; i < argc; i++) {
-		strncpy (argv2[i], argv[i], 1023);
-		argv2[i][1023] = '\0';
+		for (i = 0; i < argc; i++) {
+			strncpy (argv2[i], argv[i], 1023);
+			argv2[i][1023] = '\0';
+		}
 	}
 	memset (b, '\0', 1024);
 	/* Headers */
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 			if (!strncmp (b, argv[i], strlen(argv[i])) || argv[i][0] == ':') {
 				/* Edit/Remove Headers */
 				print = 1;
-				for (j = edit + 1; j < argc && argv[j]; j++)
+				for (j = edit + 1; !value && j < argc && argv[j]; j++)
 					if ((ptr = strchr (argv[j], ':')) &&
 						!strncmp (b, argv[j], ptr - argv[j] + 1)) {
 						if (ptr[1] != '\0' && argv2[j][0])
