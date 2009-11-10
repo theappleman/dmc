@@ -84,7 +84,7 @@ void mime_unpack (int xtr) {
 	FILE *fd = NULL;
 	char b[1024], boundary[1024], encoding[1024], filename[1024], *ptr, *ptr2;
 	unsigned char bd[1024];
-	int entity = 0, dump = 0, len, in, out, i;
+	int entity = 0, dump = 0, empty = 0, len, in, out, i, n = 0;
 
 	boundary[0] = encoding[0] = filename[0] = '\0';
 	memset (b, '\0', 1024);
@@ -92,14 +92,14 @@ void mime_unpack (int xtr) {
 		if (!memcmp(b, "--", 2)) {
 			if (boundary[0] && strstr(b, boundary) &&
 					!memcmp(b+strlen(b)-3, "--", 2)) {
-				entity = dump = 0;
+				entity = dump = empty = 0;
 			} else {
 				strncpy(boundary, b+2, 1023);
 				if ((len = strlen(boundary)) > 0)
 					boundary[len-1] = '\0';
 				if (fgets(b, 1023, stdin) && strstr(b, "Content-Type:")) {
 					entity = 1;
-					dump = 0;
+					dump = empty = 0;
 				}
 			}
 		}
@@ -114,7 +114,11 @@ void mime_unpack (int xtr) {
 					(ptr = strchr(filename, '\n')))
 					ptr[0] = '\0';
 				puts (filename);
+			} else if (strstr(b, "boundary=")) {
+				empty = 1;
 			} else if (b[0] == '\n') {
+				if (!empty && !filename[0])
+					snprintf(filename, 1023, "mimepart-%i", n++);
 				if (xtr && !dump && filename[0] && (fd = fopen(filename, "w"))) {
 					dump = 1;
 					continue;
