@@ -115,20 +115,27 @@ send_message () {
 		exit 1
 	fi
 	# TODO: find better name for the auto mode
+	if [ -e "${FILE}.d" ]; then
+		TMP="`mktemp ~/.dmc/tmp/mail.XXXXXX`"
+		cat $FILE | dmc-pack `ls ${FILE}.d/*` > $TMP 
+	else
+		TMP=$FILE
+	fi
 	if [ "${SEND}" = "!msmtp" ]; then
 		TO="`dmc-filter -v To: < $FILE`"
 		SJ="`dmc-filter -v Subject: < $FILE`"
 		echo "Sending mail to $TO (${SJ})..."
 #		HOST=`dmc-smtp ${TO}`
-		msmtp "--user=${USER}" "--from=${MAIL}" $TO < ${FILE}
+		msmtp "--user=${USER}" "--from=${MAIL}" $TO < ${TMP}
 		return $?
 	elif [ "`echo \"${SEND}\" | grep '|'`" ]; then
 		echo "=> cat $1 ${SEND}"
 		# TODO: setup environment for $TO $SUBJECT ...
-		eval cat $1 ${SEND}
+		eval cat ${TMP} ${SEND}
 	else
 		echo "SEND method '${SEND}' not supported"
 	fi
+	[ -e "${FILE}.d" ] && rm -f $TMP
 	return 0
 }
 
@@ -183,6 +190,7 @@ case "$1" in
 				echo "Mail sent. local copy moved to ~/.dmc/box/${NAME}/sent"
 				mkdir -p ~/.dmc/box/${NAME}/sent
 				mv $b ~/.dmc/box/${NAME}/sent
+				[ -e "${b}.d" ] && mv ${b}.d ~/.dmc/box/${NAME}/sent
 			else
 				echo "There was an error sending the mail"
 			fi

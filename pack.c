@@ -32,7 +32,7 @@ int b64_decode(unsigned char in[4], unsigned char out[3]) {
 
 void mime_pack(char **files, int nfiles) {
 	FILE *fd = NULL;
-	char b[1024], cmd[1024], *ptr = NULL;
+	char b[1024], cmd[1024], *ptr = NULL, *ptr2 = NULL;
 	unsigned char bd[1024];
 	int header = 1, len, in, out, i;
 
@@ -47,7 +47,7 @@ void mime_pack(char **files, int nfiles) {
 		fputs (b, stdout);
 	}
 	for(i = 0; i < nfiles; i++) {
-		snprintf (cmd, 1023, "file -i \"%s\"", files[i]);
+		snprintf (cmd, 1023, "file -iL \"%s\"", files[i]);
 		if (!(fd=popen (cmd, "r")))
 			continue;
 		fgets (b, 1023, fd);
@@ -56,9 +56,12 @@ void mime_pack(char **files, int nfiles) {
 			continue;
 		if (!(fd=fopen(files[i], "r")))
 			continue;
+		if ((ptr2 = strrchr(files[i], '/')))
+			ptr2++;
+		else ptr2 = files[i];
 		puts ("--dmc-multipart");
-		printf ("Content-Type: %s\n", ptr+1);
-		printf ("Content-Disposition: attachment; filename=\"%s\"\n", files[i]);
+		printf ("Content-Type: %s", ptr+1);
+		printf ("Content-Disposition: attachment; filename=\"%s\"\n", ptr2);
 		if (strstr (ptr, "text")) {
 			printf("Content-Transfer-Encoding: quoted-printable\n\n");
 			while (fgets(b, 1023, fd))
