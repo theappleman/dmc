@@ -16,7 +16,6 @@ static int ssl = 0;
 static SSL_CTX *ctx;
 static SSL *sfd;
 #endif
-
 static int fd = -1;
 
 int sock_ssl (int enable) {
@@ -39,27 +38,26 @@ int sock_ssl (int enable) {
 #endif
 }
 
-// TODO: cleanup all those fd=-1
 int sock_connect(const char *host, int port, int ssl) {
 	struct sockaddr_in sa;
 	struct hostent *he;
-	int s = socket (AF_INET, SOCK_STREAM, 0);
+	int ret, s = socket (AF_INET, SOCK_STREAM, 0);
 	fd = -1;
 	if (s != -1) {
-		fd = s;
 		memset (&sa, 0, sizeof (sa));
 		sa.sin_family = AF_INET;
 		he = (struct hostent *)gethostbyname (host);
 		if (he != (struct hostent*)0) {
 			sa.sin_addr = *((struct in_addr *)he->h_addr);
 			sa.sin_port = htons (port);
-			if (connect (fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr)))
-				fd = -1;
-			else fd = sock_ssl (ssl);
-		} else fd = -1;
+			if (!connect (s, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
+				fd = s;
+				if ((ret = sock_ssl (ssl))) fd = ret;
+			}
+		}
 		if (fd == -1)
 			close (s);
-	} else fd = -1;
+	}
 	return fd;
 }
 
@@ -68,7 +66,7 @@ int sock_ready() {
 	fds[0].fd = fd;
 	fds[0].events = POLLIN|POLLPRI;
 	fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
-	return poll((struct pollfd *)&fds, 1, 10);
+	return poll(fds, 1, 10);
 }
 
 void sock_close() {
