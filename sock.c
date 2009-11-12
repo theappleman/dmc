@@ -19,7 +19,7 @@ static SSL *sfd;
 static int fd = -1;
 
 int sock_ssl (int enable) {
-	int ret = 0;
+	int ret = fd;
 #if HAVE_SSL
 	if (enable) {
 		// TODO Check certificate
@@ -29,7 +29,8 @@ int sock_ssl (int enable) {
 		ctx = SSL_CTX_new (SSLv23_method ());
 		sfd = SSL_new (ctx);
 		SSL_set_fd (sfd, fd);
-		ret = SSL_connect (sfd);
+		if (SSL_connect (sfd) < 1)
+			ret = -1;
 	}
 	ssl = enable;
 #endif
@@ -39,7 +40,7 @@ int sock_ssl (int enable) {
 int sock_connect(const char *host, int port, int ssl) {
 	struct sockaddr_in sa;
 	struct hostent *he;
-	int ret, s = socket (AF_INET, SOCK_STREAM, 0);
+	int s = socket (AF_INET, SOCK_STREAM, 0);
 	fd = -1;
 	if (s != -1) {
 		memset (&sa, 0, sizeof (sa));
@@ -50,7 +51,7 @@ int sock_connect(const char *host, int port, int ssl) {
 			sa.sin_port = htons (port);
 			if (!connect (s, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
 				fd = s;
-				if ((ret = sock_ssl (ssl))) fd = ret;
+				fd = sock_ssl (ssl);
 			}
 		}
 		if (fd == -1)
