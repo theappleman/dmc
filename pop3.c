@@ -24,36 +24,30 @@ static char *getword () {
 static int waitreply (int res) {
 	char result[256];
 	char *ch, *str = word;
-	int lock = 1;
 	int reply = -1;
 
-	result[0] = 0;
+	result[0] = '\0';
 	ftruncate (2, 0);
 	lseek (2, 0, SEEK_SET);
-	while (lock || sock_ready ()) {
-		lock = 0;
-		if (sock_read (word, 512) <1)
+	do {
+		if (sock_read (word, 512) < 1)
 			break;
 		if (reply==-1) {
-			ch = strchr (str, '\r');
-			if (!ch)
-				ch = strchr (str, '\n');
-			if (ch) {
+			if ((ch = strchr (str, '\r')) || (ch = strchr (str, '\n'))) {
 				reply = (word[0] == '+');
-				*ch = 0;
+				*ch = '\0';
 				snprintf (result, 1023, "### %s %d \"%s\"\n", cmd, reply, str);
 				str = ch+((ch[1]=='\n')?2:1);
 			}
 		}
 		// TODO: Fix possible \r\n issues
-		ch = strstr (str, "\r\n.");
-		if (ch)
+		if ((ch = strstr (str, "\r\n.")))
 			*ch = '\0';
 		write (2, str, strlen (str));
-	}
+	} while (sock_ready ());
 	write (2, "\n", 1);
 	if (res) {
-		if (result[0] == 0)
+		if (result[0] == '\0')
 			snprintf (result, 1023, "### %s %d \"\"\n", cmd, reply);
 		write (1, result, strlen (result));
 	}

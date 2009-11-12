@@ -18,30 +18,24 @@ static SSL *sfd;
 #endif
 static int fd = -1;
 
-int sock_ssl (int enable) {
-	int ret = fd;
-#if HAVE_SSL
-	if (enable) {
-		// TODO Check certificate
-		SSL_library_init ();
-		SSL_load_error_strings ();
-		OpenSSL_add_all_algorithms ();
-		ctx = SSL_CTX_new (SSLv23_method ());
-		sfd = SSL_new (ctx);
-		SSL_set_fd (sfd, fd);
-		if (SSL_connect (sfd) < 1)
-			ret = -1;
-	}
-	ssl = enable;
-#endif
-	return ret;
+int sock_ssl (int fd) {
+	// TODO Check certificate
+	SSL_library_init ();
+	SSL_load_error_strings ();
+	OpenSSL_add_all_algorithms ();
+	ctx = SSL_CTX_new (SSLv23_method ());
+	sfd = SSL_new (ctx);
+	SSL_set_fd (sfd, fd);
+	if (SSL_connect (sfd) < 1)
+		return -1;
+	else return fd;
 }
 
-int sock_connect(const char *host, int port, int ssl) {
+int sock_connect(const char *host, int port, int ssl_enable) {
 	struct sockaddr_in sa;
 	struct hostent *he;
 	int s = socket (AF_INET, SOCK_STREAM, 0);
-	fd = -1;
+	ssl = ssl_enable, fd = -1;
 	if (s != -1) {
 		memset (&sa, 0, sizeof (sa));
 		sa.sin_family = AF_INET;
@@ -49,10 +43,8 @@ int sock_connect(const char *host, int port, int ssl) {
 		if (he != (struct hostent*)0) {
 			sa.sin_addr = *((struct in_addr *)he->h_addr);
 			sa.sin_port = htons (port);
-			if (!connect (s, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
-				fd = s;
-				fd = sock_ssl (ssl);
-			}
+			if (!connect (s, (const struct sockaddr*)&sa, sizeof (struct sockaddr)))
+				fd = ssl ? sock_ssl (s) : s;
 		}
 		if (fd == -1)
 			close (s);
@@ -65,7 +57,7 @@ int sock_ready() {
 	fds[0].fd = fd;
 	fds[0].events = POLLIN|POLLPRI;
 	fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
-	return poll(fds, 1, 10);
+	return poll(fds, 1, 100);
 }
 
 void sock_close() {
