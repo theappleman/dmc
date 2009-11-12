@@ -19,8 +19,8 @@ static SSL *sfd;
 static int fd = -1;
 
 int sock_ssl (int enable) {
+	int ret = 0;
 #if HAVE_SSL
-	int err = 1;
 	if (enable) {
 		// TODO Check certificate
 		SSL_library_init ();
@@ -29,13 +29,11 @@ int sock_ssl (int enable) {
 		ctx = SSL_CTX_new (SSLv23_method ());
 		sfd = SSL_new (ctx);
 		SSL_set_fd (sfd, fd);
-		err = SSL_connect (sfd);
+		ret = SSL_connect (sfd);
 	}
 	ssl = enable;
-	return err;
-#else
-	return 0;
 #endif
+	return ret;
 }
 
 int sock_connect(const char *host, int port, int ssl) {
