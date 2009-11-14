@@ -19,6 +19,7 @@ static SSL *sfd;
 static int fd = -1;
 
 int sock_ssl (int fd) {
+#if HAVE_SSL
 	// TODO Check certificate
 	SSL_library_init ();
 	SSL_load_error_strings ();
@@ -28,7 +29,9 @@ int sock_ssl (int fd) {
 	SSL_set_fd (sfd, fd);
 	if (SSL_connect (sfd) < 1)
 		return -1;
-	else return fd;
+	else
+#endif
+		return fd;
 }
 
 int sock_connect(const char *host, int port, int ssl_enable) {
@@ -53,11 +56,15 @@ int sock_connect(const char *host, int port, int ssl_enable) {
 }
 
 int sock_ready() {
+#if HAVE_SSL
+	if (ssl && SSL_pending (sfd))
+		return 1;
+#endif
 	struct pollfd fds[1];
 	fds[0].fd = fd;
 	fds[0].events = POLLIN|POLLPRI;
 	fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
-	return poll(fds, 1, 100);
+	return poll(fds, 1, 1000);
 }
 
 void sock_close() {

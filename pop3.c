@@ -22,29 +22,27 @@ static char *getword () {
 }
 
 static int waitreply (int res) {
-	char result[256];
-	char *ch, *str = word;
+	char result[1024];
+	char *ch, *str;
 	int reply = -1;
 
-	result[0] = '\0';
 	ftruncate (2, 0);
 	lseek (2, 0, SEEK_SET);
-	do {
-		if (sock_read (word, 512) < 1)
-			break;
-		if (reply==-1) {
+	result[0] = '\0';
+	while (sock_ready () && sock_read (word, 512) > 1) {
+		str = word;
+		if (reply == -1 && (reply = (word[0] == '+'))) {
 			if ((ch = strchr (str, '\r')) || (ch = strchr (str, '\n'))) {
-				reply = (word[0] == '+');
 				*ch = '\0';
 				snprintf (result, 1023, "### %s %d \"%s\"\n", cmd, reply, str);
-				str = ch+((ch[1]=='\n')?2:1);
+				str = ch + ((ch[1] == '\r' || ch[1] == '\n') ? 2 : 1);
 			}
 		}
 		// TODO: Fix possible \r\n issues
 		if ((ch = strstr (str, "\r\n.")))
 			*ch = '\0';
 		write (2, str, strlen (str));
-	} while (sock_ready ());
+	}
 	write (2, "\n", 1);
 	if (res) {
 		if (result[0] == '\0')
