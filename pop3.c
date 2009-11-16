@@ -14,14 +14,14 @@
 static char *cmd = NULL;
 static char word[1024];
 
-static char *getword () {
+static char *getword() {
 	fscanf (stdin, "%255s", word);
 	if (feof (stdin))
 		*word = '\0';
 	return word;
 }
 
-static int waitreply (int res) {
+static int waitreply(int res) {
 	char result[1024];
 	char *ch, *str;
 	int reply = -1;
@@ -35,7 +35,7 @@ static int waitreply (int res) {
 			if ((ch = strchr (str, '\r')) || (ch = strchr (str, '\n'))) {
 				*ch = '\0';
 				snprintf (result, 1023, "### %s %d \"%s\"\n", cmd, reply, str);
-				str = ch + ((ch[1] == '\r' || ch[1] == '\n') ? 2 : 1);
+				str = ch + (ch[1] == '\n' ? 2 : 1);
 			}
 		}
 		// TODO: Fix possible \r\n issues
@@ -52,7 +52,7 @@ static int waitreply (int res) {
 	return reply;
 }
 
-static int doword (char *word) {
+static int doword(char *word) {
 	int ret = 1;
 	free (cmd);
 	cmd = strdup (word);
@@ -68,26 +68,26 @@ static int doword (char *word) {
 	if (!strcmp (word, "help") || !strcmp (word, "?")) {
 		printf ("Use: ls cat head rm login exit\n");
 	} else
-	if (!strcmp(word, "ls")) {
+	if (!strcmp (word, "ls")) {
 		sock_printf ("LIST\n");
 		waitreply (1);
 	} else
-	if (!strcmp(word, "cat")) {
-		sock_printf ("RETR %d\n", atoi (getword()));
+	if (!strcmp (word, "cat")) {
+		sock_printf ("RETR %d\n", atoi (getword ()));
 		waitreply (1);
 	} else
-	if (!strcmp(word, "head")) {
-		sock_printf ("TOP %d 50\n", atoi (getword()));
+	if (!strcmp (word, "head")) {
+		sock_printf ("TOP %d 50\n", atoi (getword ()));
 		waitreply (1);
 	} else
-	if (!strcmp(word, "rm")) {
-		sock_printf ("DELE %d\n", atoi (getword()));
+	if (!strcmp (word, "rm")) {
+		sock_printf ("DELE %d\n", atoi (getword ()));
 		waitreply (1);
 	} else
-	if (!strcmp(word, "login")) {
-		sock_printf ("USER %s\n", getword());
+	if (!strcmp (word, "login")) {
+		sock_printf ("USER %s\n", getword ());
 		waitreply (0); // TODO: if user fail, do not send pass
-		sock_printf ("PASS %s\n", getword());
+		sock_printf ("PASS %s\n", getword ());
 		waitreply (1);
 	} else sock_printf ("NOOP\n");
 	return ret;
@@ -95,14 +95,14 @@ static int doword (char *word) {
 
 int main(int argc, char **argv) {
 	int ssl = 0, ret = 1;
-	if (argc>2) {
-		if (argc>3)
-			ssl = (*argv[3]=='1');
+	if (argc > 2) {
+		if (argc > 3)
+			ssl = (*argv[3] == '1');
 		if (sock_connect (argv[1], atoi (argv[2]), ssl) >= 0) {
 			ret = atexit (sock_close);
 			waitreply (1);
 			while (doword (getword ()));
-		} else printf ("Cannot connect to %s %d\n", argv[1], atoi(argv[2]));
+		} else printf ("Cannot connect to %s %d\n", argv[1], atoi (argv[2]));
 	} else printf ("Usage: dmc-pop3 host port [ssl] 2> body > fifo < input\n");
 	return 0;
 }

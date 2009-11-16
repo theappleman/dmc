@@ -8,14 +8,14 @@
 static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char cd64[]="|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
 
-void b64_encode(unsigned char in[3], unsigned char out[4], int len) {
+static void b64_encode(unsigned char in[3], unsigned char out[4], int len) {
 	out[0] = cb64[ in[0] >> 2 ];
 	out[1] = cb64[ ((in[0] & 0x03) << 4) | ((in[1] & 0xf0) >> 4) ];
 	out[2] = (len > 1 ? cb64[ ((in[1] & 0x0f) << 2) | ((in[2] & 0xc0) >> 6) ] : '=');
 	out[3] = (len > 2 ? cb64[ in[2] & 0x3f ] : '=');
 }
 
-int b64_decode(unsigned char in[4], unsigned char out[3]) {
+static int b64_decode(unsigned char in[4], unsigned char out[3]) {
 	unsigned char len = 3, i, v[4];
 	for(i=0;i<4;i++) {
 		if (in[i]<43||in[i]>122)
@@ -30,7 +30,7 @@ int b64_decode(unsigned char in[4], unsigned char out[3]) {
 	return len;
 }
 
-void mime_pack(char **files, int nfiles) {
+static void mime_pack(char **files, int nfiles) {
 	FILE *fd = NULL;
 	char b[1024], cmd[1024], *ptr = NULL, *ptr2 = NULL;
 	unsigned char bd[1024];
@@ -80,7 +80,7 @@ void mime_pack(char **files, int nfiles) {
 	puts ("--dmc-multipart--");
 }
 
-void mime_unpack (int xtr) {
+static void mime_unpack (int xtr) {
 	FILE *fd = NULL;
 	char b[1024], boundary[1024], encoding[1024], filename[1024], *ptr, *ptr2;
 	unsigned char bd[1024];
