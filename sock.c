@@ -1,4 +1,6 @@
-/* dmc :: Copyleft 2009 -- pancake (at) nopcode (dot) org */
+/* dmc - dynamic mail client
+ * See LICENSE file for copyright and license details.
+ */
 
 #include <stdio.h>
 #include <string.h>

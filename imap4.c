@@ -1,4 +1,6 @@
-/* dmc :: Copyleft 2009 -- pancake (at) nopcode (dot) org */
+/* dmc - dynamic mail client
+ * See LICENSE file for copyright and license details.
+ */
 
 #include <poll.h>
 #include <fcntl.h>
@@ -13,9 +15,8 @@
 
 static char *cmd = NULL;
 static char word[4096];
-static int ctr = 1;
-static int catmode = 0;
 static char *dir;
+static int ctr = 1;
 
 /* TODO clean this ugly code */
 static char *getword() {
@@ -52,7 +53,7 @@ reread:
 	return word;
 }
 
-static int waitreply() {
+static int waitreply(int catmode) {
 	char *ptr;
 	int lock = 1;
 	int line = 0;
@@ -128,7 +129,6 @@ RECENT - show the number of recent messages
 #endif
 static int doword(char *word) {
 	int ret = 1;
-	catmode = 0;
 	free (cmd);
 	cmd = strdup (word);
 	if (*word == '\0') {
@@ -136,7 +136,7 @@ static int doword(char *word) {
 	} else
 	if (!strcmp (word, "exit")) {
 		sock_printf ("%d LOGOUT\n", ctr++);
-		waitreply ();
+		waitreply (0);
 		ret = 0;
 	} else
 	if (!strcmp (word, "help") || !strcmp (word, "?")) {
@@ -151,27 +151,25 @@ static int doword(char *word) {
 		if (!strcmp (dir, "\"\""))
 			*dir = 0;
 		sock_printf ("%d SELECT \"%s\"\n", ctr++, dir);
-		waitreply ();
+		waitreply (0);
 	} else
 	if (!strcmp (word, "find")) {
 		sock_printf ("%d SEARCH TEXT \"%s\"\n", ctr++, getword ());
-		waitreply ();
+		waitreply (0);
 	} else
 	if (!strcmp (word, "ls")) {
 		sock_printf ("%d LIST \"%s\" *\n", ctr++, dir);
-		waitreply ();
+		waitreply (0);
 	} else
 	if (!strcmp (word, "cat")) {
-		catmode = 1;
 		sock_printf ("%d FETCH %d body[]\n",
 			ctr++, atoi (getword ()));
-		waitreply ();
+		waitreply (1);
 	} else
 	if (!strcmp (word, "head")) {
-		catmode = 1;
 		sock_printf ("%d FETCH %d body[header]\n",
 			ctr++, atoi (getword ()));
-		waitreply ();
+		waitreply (1);
 	} else
 	if (!strcmp (word, "mvdir")) {
 		sock_printf ("%d RENAME %s %s\n",
@@ -182,12 +180,12 @@ static int doword(char *word) {
 	} else
 	if (!strcmp (word, "rm")) {
 		sock_printf ("%d DELE %d\n", ctr++, atoi (getword ()));
-		waitreply ();
+		waitreply (0);
 	} else
 	if (!strcmp (word, "rmdir")) {
 		printf("%d DELETE \"%s\"\n",
 			ctr++, getword ());
-		waitreply ();
+		waitreply (0);
 	} else
 	if (!strcmp (word, "login")) {
 		char *user = strdup (getword ());
@@ -196,10 +194,10 @@ static int doword(char *word) {
 			ctr++, user, pass);
 		free (user);
 		free (pass);
-		waitreply ();
+		waitreply (0);
 	} else {
 		sock_printf ("%d NOOP\n", ctr++);
-		waitreply ();
+		waitreply (0);
 	}
 	return ret;
 }
@@ -212,7 +210,7 @@ int main (int argc, char **argv) {
 		if (sock_connect (argv[1], atoi (argv[2]), ssl) >= 0) {
 			ret = 0;
 			atexit (sock_close);
-			waitreply ();
+			waitreply (0);
 			dir = strdup ("");
 			while (doword (getword ()));
 		} else printf ("Cannot connect to %s %d\n", argv[1], atoi (argv[2]));

@@ -1,10 +1,8 @@
 #!/bin/sh
+# dmc - dynamic mail client
 # See LICENSE file for copyright and license details.
-#---
-# dmc - dynamic mail client - pancake <at> nopcode <dot> org
 
 VERSION="0.1"
-COPYRIGHT="Copyleft -- pancake@nopcode.org"
 HELP="Usage: dmc [-hv] [-e acc] [-a addr] [-m addr subj] [-A file] [-s msg] [action]"
 
 [ -z "${EDITOR}" ] && EDITOR=vim
@@ -260,7 +258,7 @@ case "$1" in
 	fi
 	;;
 "-v"|"--version")
-	echo "dmc v${VERSION} ${COPYRIGHT}"
+	echo "dmc v${VERSION}"
 	;;
 "--help"|"-h")
 	echo ${HELP}

@@ -1,4 +1,6 @@
-/* dmc :: Copyleft 2009 -- nibble (at) develsec (dot) org */
+/* dmc - dynamic mail client
+ * See LICENSE file for copyright and license details.
+ */
 
 #include <stdio.h>
 #include <string.h>

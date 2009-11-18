@@ -1,7 +1,9 @@
 #!/bin/sh
 # dmc - dynamic mail client
-# Copyleft 2009 -- pancake <at> nopcode <dot> org
+# See LICENSE file for copyright and license details.
 # TODO: rewrite in C
+
+VERSION="0.1"
 
 [ -z "${DMCTAG_ROOT}" ] && \
 	DMCTAG_ROOT="${HOME}/.dmctag"
@@ -84,7 +86,7 @@ case "$1" in
 	untag ${FILE}
 	;;
 "-v")
-	echo "dmc-tag-0.1 (c) 2009 pancake(at)nopcode(dot)org"
+	echo "dmc-tag v${VERSION}"
 	;;
 "")
 	echo "Usage: dmc-tag [-uhv] [-l [tag ..]] [-c [file ..]] [-m dir dir] [file ..]"
