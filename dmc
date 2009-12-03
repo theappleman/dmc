@@ -258,6 +258,13 @@ case "$1" in
 		${EDITOR} ~/.dmc/addrbook
 	fi
 	;;
+"-i"|"--id")
+	if test -n "$2"; then
+		test -e ~/.dmc/acc/$2 && . ~/.dmc/acc/$2
+	else
+		echo $NAME
+	fi
+	;;
 "-v"|"--version")
 	echo "dmc v${VERSION}"
 	;;
